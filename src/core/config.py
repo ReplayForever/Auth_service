@@ -30,6 +30,9 @@ class PostgreSQLSettings(BaseSettings):
     host: str = Field(validation_alias='DB_HOST')
     port: int = Field(validation_alias='DB_PORT')
 
+    def get_db_url(self):
+        dsn = f'postgresql+asyncpg://{self.user}:{self.password}@{self.host}:{self.port}/{self.db}'
+
 
 class Settings(BaseSettings):
     log_level: int | str = Field(validation_alias='LOG_LEVEL', default=logging.DEBUG)

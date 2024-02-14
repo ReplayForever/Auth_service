@@ -6,6 +6,7 @@ services:
     container_name: auth_service
     depends_on:
       - redis
+      - auth_postgres
     ports:
       - "8002"
     env_file:

@@ -37,8 +37,20 @@ services:
       POSTGRES_DB: ${DB_NAME:-auth_database}
       POSTGRES_USER: ${DB_USER:-app}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-password}
+    command: -p 5434
     ports:
-      - "5434"
+      - "5434:5434"
+    networks:
+      - my_network
+
+  auth_tests:
+    build: ./tests/functional
+    container_name: auth_tests
+#    depends_on:
+#      - fastapi_nginx
+#      - auth_postgres
+    env_file:
+      - .env
     networks:
       - my_network
 
@@ -46,7 +58,7 @@ services:
     image: redis:latest
     container_name: redis
     ports:
-      - "6379"
+      - "6379:6379"
     networks:
       - my_network
 

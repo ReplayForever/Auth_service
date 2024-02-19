@@ -32,6 +32,7 @@ class User(Base):
     token_id = Column(Integer, ForeignKey('tokens.id'))
     token = relationship('Token', back_populates='users')
     login_history = relationship('LoginHistory', back_populates='users')
+    is_active = Column(Boolean, default=False)
 
     def __init__(self, username: str, login: str, password: str, email: str):
         if not validate_login(self.login):
@@ -58,6 +59,10 @@ class Role(Base):
     id = Column(Integer, primary_key=True, unique=True, nullable=False)
     name = Column(String(50), unique=True, nullable=False)
     description = Column(String(100), nullable=False)
+    is_subscriber = Column(Boolean, default=False)
+    is_superuser = Column(Boolean, default=False)
+    is_manager = Column(Boolean, default=False)
+    is_admin = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)
     modified_at = Column(DateTime)
     user = relationship("User", back_populates='roles')

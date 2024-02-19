@@ -24,7 +24,7 @@ class User(Base):
     email = Column(String(255), unique=True, nullable=False)
     birth_day = Column(DateTime)
     picture = Column(String(255))
-    is_verify_email = Column(Boolean, default=False)
+    is_verified_email = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)
     modified_at = Column(DateTime)
     role_id = Column(Integer, ForeignKey('roles.id'))

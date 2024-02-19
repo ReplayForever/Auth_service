@@ -4,6 +4,8 @@ import re
 def validate_login(login: str) -> bool:
     if not re.match("^[a-zA-Z0-9_-]+$", login):
         return False
+    if len(login) < 6 or (len(login) > 255):
+        return False
     return True
 
 

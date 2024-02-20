@@ -9,7 +9,7 @@ from db.postgres import get_session
 from db.redis import get_redis
 from models.users import UserInDB
 from models.tokens import AccessTokenCreate, AccessTokenInDB
-from models.schemas import Token, User
+from models.schemas import Token, User, Role
 from functools import lru_cache
 
 
@@ -27,9 +27,9 @@ class JWTService:
         refresh_token = await self.authorize.create_refresh_token(subject=user.id)
         return refresh_token
 
-    async def set_access_token(self, token: str, user_id: str, token_id: int, expires_time: int):
-        key = '%s:%s' % (user_id, token_id)
-        await self.redis.set(name=key, value=token, ex=expires_time)
+    async def set_access_token(self, token: str, user_id: str, role: Role, expires_time: int):
+        value = '%s:%s' % (user_id, role)
+        await self.redis.set(name=token, value=value, ex=expires_time)
 
     async def set_refresh_token(self, token_create: AccessTokenCreate):
         token_dto = jsonable_encoder(token_create)

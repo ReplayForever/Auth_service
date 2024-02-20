@@ -1,11 +1,16 @@
 from async_fastapi_jwt_auth import AuthJWT
+from fastapi import Depends
 from fastapi.encoders import jsonable_encoder
 from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+
+from db.postgres import get_session
+from db.redis import get_redis
 from models.users import UserInDB
 from models.tokens import AccessTokenCreate, AccessTokenInDB
 from models.schemas import Token, User
+from functools import lru_cache
 
 
 class JWTService:
@@ -42,3 +47,10 @@ class JWTService:
         return token
 
 
+@lru_cache()
+def get_token_service(
+        db: AsyncSession = Depends(get_session),
+        authorize: AuthJWT = Depends(),
+        redis: Redis = Depends(get_redis)
+) -> JWTService:
+    return JWTService(db, authorize, redis)

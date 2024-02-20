@@ -27,8 +27,8 @@ class JWTService:
         refresh_token = await self.authorize.create_refresh_token(subject=user.id)
         return refresh_token
 
-    async def set_access_token(self, token: str, user_id: str, role: Role, expires_time: int):
-        value = '%s:%s' % (user_id, role)
+    async def set_access_token(self, token: str, user_id: str, role_id: int, expires_time: int):
+        value = '%s:%s' % (user_id, role_id)
         await self.redis.set(name=token, value=value, ex=expires_time)
 
     async def set_refresh_token(self, token_create: AccessTokenCreate):
@@ -39,7 +39,8 @@ class JWTService:
         await self.db.refresh(token)
 
     async def get_access_token(self, user_id: str):
-        await self.redis.get(name=user_id)
+        token = await self.redis.get(name=user_id)
+        return token
 
     async def get_refresh_token(self, user_id: str) -> AccessTokenInDB:
         stmt = select(Token).join(User).filter(User.id == user_id)

@@ -31,7 +31,8 @@ class PostgreSQLSettings(BaseSettings):
     port: int = Field(validation_alias='DB_PORT')
 
     def get_db_url(self):
-        dsn = f'postgresql+asyncpg://{self.user}:{self.password}@{self.host}:{self.port}/{self.db}'
+        dsn = f'postgresql+asyncpg://{self.user}:{self.password}@{self.host}:{self.port}/{self.dbname}'
+        return dsn
 
 
 class Settings(BaseSettings):

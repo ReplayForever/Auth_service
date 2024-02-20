@@ -8,11 +8,11 @@ from redis.asyncio import Redis
 from core.config import settings
 from core.logger import LOGGING
 from db import redis
+from db.postgres import create_database
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    redis.redis = Redis(host=settings.redis.host, port=settings.redis.port)
     redis.redis = Redis(host=settings.redis.host, port=settings.redis.port)
 
     yield
@@ -29,6 +29,12 @@ app = FastAPI(
     version="1.0.0",
     lifespan=lifespan
 )
+
+
+@app.on_event("startup")
+async def startup():
+    from models.schemas import User, Role, LoginHistory
+    await create_database()
 
 
 if __name__ == '__main__':

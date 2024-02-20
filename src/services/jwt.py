@@ -1,3 +1,5 @@
+import json
+
 from async_fastapi_jwt_auth import AuthJWT
 from fastapi import Depends, Request
 from redis.asyncio import Redis
@@ -43,7 +45,8 @@ class JWTService:
         return user_agent
 
     async def set_access_token(self, token: str, user_id: str, role_id: int, expires_time: int):
-        value = '%s:%s' % (user_id, role_id)
+        value = {"user_id": user_id, "role_id": role_id}
+        value = json.dumps(value)
         await self.redis.set(name=token, value=value, ex=expires_time)
 
     async def set_refresh_token(self, token: str, user_agent: str):

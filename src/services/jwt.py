@@ -27,8 +27,9 @@ class JWTService:
         refresh_token = await self.authorize.create_refresh_token(subject=user.id)
         return refresh_token
 
-    async def set_access_token(self, token: str, user_id: str, expires_time: int):
-        await self.redis.set(name=user_id, value=token, ex=expires_time)
+    async def set_access_token(self, token: str, user_id: str, token_id: int, expires_time: int):
+        key = '%s:%s' % (user_id, token_id)
+        await self.redis.set(name=key, value=token, ex=expires_time)
 
     async def set_refresh_token(self, token_create: AccessTokenCreate):
         token_dto = jsonable_encoder(token_create)

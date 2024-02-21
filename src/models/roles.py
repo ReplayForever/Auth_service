@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+from models.users import UserProfileResult
 
 
 class CreateRole(BaseModel):
@@ -26,3 +27,8 @@ class RoleChangePermission(BaseModel):
 class RoleAssign(BaseModel):
     user_id: str
     role_id: int
+
+class UserRole(BaseModel):
+    user: UserProfileResult
+    role: RoleInDB
+    

@@ -5,7 +5,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 from pydantic import Field
 from pydantic_settings import BaseSettings
-
+from async_fastapi_jwt_auth import AuthJWT
 
 from logging import config as logging_config
 
@@ -31,7 +31,8 @@ class PostgreSQLSettings(BaseSettings):
     port: int = Field(validation_alias='DB_PORT')
 
     def get_db_url(self):
-        dsn = f'postgresql+asyncpg://{self.user}:{self.password}@{self.host}:{self.port}/{self.db}'
+        dsn = f'postgresql+asyncpg://{self.user}:{self.password}@{self.host}:{self.port}/{self.dbname}'
+        return dsn
 
 
 class Settings(BaseSettings):
@@ -41,3 +42,12 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
+
+
+class JWTSettings(BaseSettings):
+    authjwt_secret_key: str = Field(validation_alias='JWT_SECRET')
+
+
+@AuthJWT.load_config
+def get_config():
+    return JWTSettings()

@@ -68,3 +68,4 @@ async def get_refresh_token(self, user_id: str) -> AccessTokenInDB:
     except SQLAlchemyError as e:
         raise HTTPException(status_code=500, detail="Database error")
 
+

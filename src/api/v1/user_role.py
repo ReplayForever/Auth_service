@@ -15,4 +15,3 @@ async def get_user_role(user_id: str, access_token: Annotated[str | None, Cookie
 @router.post("/user_role/", description="Назначение роли")
 async def assign_role(role_assign: RoleAssign, access_token: Annotated[str | None, Cookie()]) -> UserRole:
     return None
-

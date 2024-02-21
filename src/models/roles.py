@@ -31,3 +31,4 @@ class RoleAssign(BaseModel):
 class UserRole(BaseModel):
     user: UserProfileResult
     role: RoleInDB
+    

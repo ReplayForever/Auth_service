@@ -5,10 +5,10 @@ from fastapi import FastAPI
 from fastapi.responses import ORJSONResponse
 from redis.asyncio import Redis
 
+from api.v1 import auth, profile
 from core.config import settings
 from core.logger import LOGGING
 from db import redis
-from db.postgres import create_database
 
 
 @asynccontextmanager
@@ -31,10 +31,8 @@ app = FastAPI(
 )
 
 
-@app.on_event("startup")
-async def startup():
-    from models.schemas import User, Role, LoginHistory
-    await create_database()
+app.include_router(auth.router, prefix='/api/v1', tags=['auth'])
+app.include_router(profile.router, prefix='/api/v1', tags=['profile'])
 
 
 if __name__ == '__main__':

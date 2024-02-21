@@ -19,7 +19,7 @@ class UserInDB(BaseModel):
     id: UUID
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class UserLogin(BaseModel):
@@ -46,17 +46,19 @@ class UserLogout(BaseModel):
 
 
 class UserProfileResult(BaseModel):
-    id: str
     username: str
-    login:str
-    password: str
+    login: str
+    first_name: str
+    last_name: str
     email: str
+    birth_day: str
+    role_id: str
+    picture: str
 
 
 class UserChangePassword(BaseModel):
     password: str
     new_password: str
-    confirm_password: str
 
 
 class UserProfileHistory(BaseModel):

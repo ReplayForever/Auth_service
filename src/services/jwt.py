@@ -1,17 +1,19 @@
 import json
+from functools import lru_cache
 
 from async_fastapi_jwt_auth import AuthJWT
-from fastapi import Request, HTTPException
+from fastapi import Request, Depends
 from redis.asyncio import Redis
-from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
+from db.postgres import get_session
+from db.redis import get_redis
 from models.tokens import AccessTokenInDB
 from models.schemas import Token, User
 
 
-class JWT:
+class JWTService:
     def __init__(self, db: AsyncSession, authorize: AuthJWT, redis: Redis) -> None:
         self.db = db
         self.authorize = authorize
@@ -22,14 +24,14 @@ class JWT:
             access_token = await self.authorize.create_access_token(subject=user_id)
             return access_token
         except Exception as e:
-            raise HTTPException(status_code=404, detail="User not found")
+            raise f'Ошибка: {e}'
 
     async def create_refresh_token(self, user_id: str) -> str:
         try:
             refresh_token = await self.authorize.create_refresh_token(subject=user_id)
             return refresh_token
         except Exception as e:
-            raise HTTPException(status_code=404, detail='User not found')
+            raise f'Ошибка: {e}'
 
     @staticmethod
     async def get_user_agent(request: Request) -> str:
@@ -49,12 +51,12 @@ class JWT:
     async def get_access_token(self, user_id: str):
         try:
             if not await self.redis.exists(user_id):
-                raise HTTPException(status_code=404, detail="User not found in Redis")
+                return None
 
             token = await self.redis.get(name=user_id)
             return token
-        except Exception:
-            raise HTTPException(status_code=503, detail="Unable to connect to Redis")
+        except Exception as e:
+            raise f'Ошибка {e}'
 
 
 async def get_refresh_token(self, user_id: str) -> AccessTokenInDB:
@@ -63,9 +65,16 @@ async def get_refresh_token(self, user_id: str) -> AccessTokenInDB:
         result = await self.db.execute(stmt)
         token = result.scalars().first()
         if token is None:
-            raise HTTPException(status_code=404, detail="Token not found for the user")
+            return None
         return token
-    except SQLAlchemyError as e:
-        raise HTTPException(status_code=500, detail="Database error")
+    except Exception as e:
+        raise f'Ошибка {e}'
 
 
+@lru_cache()
+def get_jwt_service(
+        redis: Redis = Depends(get_redis),
+        db: AsyncSession = Depends(get_session),
+        authorize: AuthJWT = Depends()
+) -> JWTService:
+    return JWTService(db, authorize, redis)

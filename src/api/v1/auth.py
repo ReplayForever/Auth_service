@@ -1,12 +1,17 @@
-from typing import Annotated
-
+from http import HTTPStatus
+from typing import Annotated, Dict
+from async_fastapi_jwt_auth import AuthJWT
 from fastapi import APIRouter, Cookie, Depends, HTTPException, status, Request
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Session
+from starlette.responses import Response
 
+from services.auth import get_auth_service
 from db.postgres import get_session
 from models.schemas import User
 from models.users import UserLogin, UserSuccessLogin, UserCreate, UserSuccessRefreshToken
-from services.jwt import JWT
+from services.auth import AuthService
+from services.jwt import JWTService, get_jwt_service
 
 router = APIRouter()
 
@@ -18,26 +23,28 @@ async def signup(user_create: UserCreate) -> None:
 
 
 @router.post('/login/',
+             response_model=UserSuccessLogin,
              description="Аутентификация пользователя")
 async def login(user_auth: UserLogin,
-                db: Session = Depends(get_session),
-                jwt: JWT = Depends(),
-                request: Request = None) -> UserSuccessLogin:
-    user = await db.execute(User.query.filter(User.login == user_auth.login).first())
+                request: Request,
+                auth_service: AuthService = Depends(get_auth_service),
+                jwt_service: JWTService = Depends(get_jwt_service)) -> UserSuccessLogin:
+    user = await auth_service.get_by_login(user_auth.login)
     if not user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Пользователь с таким логином не найден')
+        raise HTTPException(status_code=HTTPStatus.UNAUTHORIZED, detail='Invalid login or password')
+    try:
+        await auth_service.check_password(
+            user=UserLogin(login=user.login, password=user.password)
+        )
+        refresh_token = await jwt_service.create_refresh_token(user.id)
+        access_token = await jwt_service.create_access_token(user.id)
 
-    if not user.check_password(user_auth.password):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Неверный пароль')
+        await jwt_service.set_refresh_token(refresh_token, user_agent=request.headers.get('User-Agent'))
+        await jwt_service.set_access_token(access_token, user.id, user.role_id, 60)
 
-    access_token = await jwt.create_access_token(user_id=str(user.id))
-    refresh_token = await jwt.create_refresh_token(user_id=str(user.id))
-
-    await jwt.set_access_token(token=access_token, user_id=str(user.id), role_id=user.role_id,
-                               expires_time=3600)
-    await jwt.set_refresh_token(token=refresh_token, user_agent=request.headers.get('User-Agent'))
-
-    return UserSuccessLogin(access_token=access_token, refresh_token=refresh_token)
+        return UserSuccessLogin(access_token=access_token, refresh_token=refresh_token)
+    except Exception:
+        raise HTTPException(status_code=HTTPStatus.UNAUTHORIZED, detail='Invalid login or password')
 
 
 @router.post('/logout/',

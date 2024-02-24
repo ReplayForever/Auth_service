@@ -15,7 +15,11 @@ from utils.validators import validate_login, validate_email
 class User(Base):
     __tablename__ = 'users'
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, unique=True, nullable=False)
+    id = Column(UUID(as_uuid=True),
+                primary_key=True,
+                default=uuid.uuid4,
+                unique=True,
+                nullable=False)
     username = Column(String(50), unique=True, nullable=False)
     login = Column(String(255), unique=True, nullable=False)
     password = Column(String(255), nullable=False)
@@ -28,14 +32,14 @@ class User(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     modified_at = Column(DateTime)
     role_id = Column(Integer, ForeignKey('roles.id'))
-    role = relationship("Role", back_populates='users')
+    role = relationship('Role', back_populates='user')
     token_id = Column(Integer, ForeignKey('tokens.id'))
-    token = relationship('Token', back_populates='users')
-    login_history = relationship('LoginHistory', back_populates='users')
+    token = relationship('Token', back_populates='user')
+    login_history = relationship('LoginHistory', back_populates='user')
     is_active = Column(Boolean, default=False)
 
-    def __init__(self, username: str, login: str, password: str, email: str):
-        if not validate_login(self.login):
+    def __init__(self, username: str, login: str, password: str, email: str, *args, **kwargs):
+        if not validate_login(login=self.login):
             raise ValueError('Invalid login')
 
         if not validate_email(self.email):
@@ -56,7 +60,7 @@ class User(Base):
 class Role(Base):
     __tablename__ = 'roles'
 
-    id = Column(Integer, primary_key=True, unique=True, nullable=False)
+    id = Column(Integer, primary_key=True, unique=True, nullable=False, autoincrement=True)
     name = Column(String(50), unique=True, nullable=False)
     description = Column(String(100), nullable=False)
     is_subscriber = Column(Boolean, default=False)
@@ -65,27 +69,27 @@ class Role(Base):
     is_admin = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)
     modified_at = Column(DateTime)
-    user = relationship("User", back_populates='roles')
+    user = relationship('User', back_populates='role')
 
 
 class Token(Base):
     __tablename__ = 'tokens'
 
-    id = Column(Integer, primary_key=True, unique=True, nullable=False)
+    id = Column(Integer, primary_key=True, unique=True, nullable=False, autoincrement=True)
     refresh_token = Column(String(255), unique=True)
     user_agent = Column(String(255))
     created_at = Column(DateTime, default=datetime.utcnow)
     modified_at = Column(DateTime)
-    user = relationship('User', back_populates='tokens')
+    user = relationship('User', back_populates='token')
 
 
 class LoginHistory(Base):
     __tablename__ = 'login_histories'
 
-    id = Column(Integer, primary_key=True, unique=True, nullable=False)
+    id = Column(Integer, primary_key=True, unique=True, nullable=False, autoincrement=True)
     user_agent = Column(String(255))
     auth_date = Column(DateTime)
     created_at = Column(DateTime, default=datetime.utcnow)
     modified_at = Column(DateTime)
     user_id = Column(ForeignKey('users.id'))
-    user = relationship('User', back_populates='login_histories')
+    user = relationship('User', back_populates='login_history')

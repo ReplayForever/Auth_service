@@ -1,16 +1,17 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Cookie
+from fastapi import APIRouter, Cookie, Depends
 
 from models.users import UserLogin, UserSuccessLogin, UserCreate, UserSuccessRefreshToken
+from services.auth import get_sign_up_service
 
 router = APIRouter()
 
 
 @router.post('/signup/',
              description="Регистрация пользователя")
-async def signup(user_create: UserCreate) -> None:
-    return None
+async def signup(user_create: UserCreate, user_register: UserCreate = Depends(get_sign_up_service)) -> None:
+    return await user_register.get_data(user_create)
 
 
 @router.post('/login/',

@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Boolean, Column, DateTime, String, Integer, ForeignKey
+from sqlalchemy import Boolean, Column, DateTime, String, Integer, ForeignKey, Date
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -9,7 +9,7 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from python_usernames import is_safe_username
 
 from db.postgres import Base
-from utils.validators import validate_login, validate_email
+from utils.validators import validate_login, validate_email, validate_password
 
 
 class User(Base):
@@ -26,11 +26,11 @@ class User(Base):
     first_name = Column(String(50))
     last_name = Column(String(50))
     email = Column(String(255), unique=True, nullable=False)
-    birth_day = Column(DateTime)
+    birth_day = Column(Date)
     picture = Column(String(255))
     is_verified_email = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)
-    modified_at = Column(DateTime)
+    modified_at = Column(DateTime, default=datetime.utcnow)
     role_id = Column(Integer, ForeignKey('roles.id'))
     role = relationship('Role', back_populates='user')
     token_id = Column(Integer, ForeignKey('tokens.id'))
@@ -44,6 +44,9 @@ class User(Base):
 
         if not validate_email(self.email):
             raise ValueError('Invalid email address')
+
+        if not validate_password(self.password):
+            raise ValueError('Password too simple')
 
         self.username = self.username = is_safe_username(username)
         self.login = login

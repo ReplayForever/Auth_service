@@ -27,8 +27,6 @@ async def login(user_auth: UserLogin,
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Пользователь с таким логином не найден')
 
-    user = user.scalar()
-
     if not user.check_password(user_auth.password):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Неверный пароль')
 

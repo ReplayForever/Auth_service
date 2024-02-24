@@ -1,17 +1,21 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Cookie, Depends
+from fastapi import APIRouter, Cookie, Depends, HTTPException, status
 
 from models.users import UserLogin, UserSuccessLogin, UserCreate, UserSuccessRefreshToken
-from services.auth import get_sign_up_service
+from services.auth import get_sign_up_service, SignUpService
 
 router = APIRouter()
 
 
 @router.post('/signup/',
              description="Регистрация пользователя")
-async def signup(user_create: UserCreate, user_register: UserCreate = Depends(get_sign_up_service)) -> None:
-    return await user_register.get_data(user_create)
+async def signup(user_create: UserCreate, user_register: SignUpService = Depends(get_sign_up_service)) -> None:
+    user = await user_register.get_data(user_create)
+    if user:
+        return {"message": "Пользователь успешно зарегистрирован"}
+    else:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Ошибка при регистрации пользователя")
 
 
 @router.post('/login/',

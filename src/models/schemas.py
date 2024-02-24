@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Boolean, Column, DateTime, String, Integer, ForeignKey
+from sqlalchemy import Boolean, Column, DateTime, String, Integer, ForeignKey, event
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -9,7 +9,7 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from python_usernames import is_safe_username
 
 from db.postgres import Base
-from utils.validators import validate_login, validate_email
+from utils.validators import validate_login, validate_email, validate_password
 
 
 class User(Base):
@@ -23,8 +23,8 @@ class User(Base):
     username = Column(String(50), unique=True, nullable=False)
     login = Column(String(255), unique=True, nullable=False)
     password = Column(String(255), nullable=False)
-    first_name = Column(String(50))
-    last_name = Column(String(50))
+    first_name = Column(String(50), nullable=True)
+    last_name = Column(String(50), nullable=True)
     email = Column(String(255), unique=True, nullable=False)
     birth_day = Column(DateTime)
     picture = Column(String(255))
@@ -38,17 +38,28 @@ class User(Base):
     login_history = relationship('LoginHistory', back_populates='user')
     is_active = Column(Boolean, default=False)
 
-    def __init__(self, username: str, login: str, password: str, email: str, *args, **kwargs):
-        if not validate_login(login=self.login):
+    def __init__(self, username: str, login: str, password: str, birth_day: str | None, email: str, *args, **kwargs):
+        if not validate_password(password):
+            raise ValueError('Invalid password')
+        
+        if not validate_login(login):
             raise ValueError('Invalid login')
 
-        if not validate_email(self.email):
+        if not validate_email(email):
             raise ValueError('Invalid email address')
-
-        self.username = self.username = is_safe_username(username)
+        
+        if not is_safe_username(username):
+            raise ValueError('Username not availible')
+        
+        self.username = username
         self.login = login
         self.password = self.password = generate_password_hash(password)
-        self.email = email
+        self.email = email  
+        if birth_day != None:
+            self.birth_day = datetime.fromisoformat(birth_day)
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+
 
     def check_password(self, password: str) -> bool:
         return check_password_hash(self.password, password)

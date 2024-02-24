@@ -9,15 +9,20 @@ from api.v1 import auth, profile, user_role, roles
 from core.config import settings
 from core.logger import LOGGING
 from db import redis
+from db.postgres import create_database
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+
+    from models.schemas import User, Role, Token, LoginHistory
+    await create_database()
     redis.redis = Redis(host=settings.redis.host, port=settings.redis.port)
 
     yield
 
     await redis.redis.close()
+
 
 app = FastAPI(
     title='AUTH сервис',

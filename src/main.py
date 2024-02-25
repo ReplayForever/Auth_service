@@ -36,6 +36,12 @@ app = FastAPI(
 )
 
 
+# @app.on_event('startup')
+# async def startup():
+#     from models.schemas import User, Role, Token, LoginHistory
+#     await create_database()
+
+
 app.include_router(auth.router, prefix='/api/v1', tags=['auth'])
 app.include_router(profile.router, prefix='/api/v1', tags=['profile'])
 app.include_router(roles.router, prefix='/api/v1', tags=['roles'])

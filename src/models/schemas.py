@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Boolean, Column, DateTime, String, Integer, ForeignKey, event
+from sqlalchemy import Boolean, Column, DateTime, String, Integer, ForeignKey, Date
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -26,11 +26,11 @@ class User(Base):
     first_name = Column(String(50), nullable=True)
     last_name = Column(String(50), nullable=True)
     email = Column(String(255), unique=True, nullable=False)
-    birth_day = Column(DateTime)
+    birth_day = Column(Date)
     picture = Column(String(255))
     is_verified_email = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)
-    modified_at = Column(DateTime)
+    modified_at = Column(DateTime, default=datetime.utcnow)
     role_id = Column(Integer, ForeignKey('roles.id'))
     role = relationship('Role', back_populates='user')
     token_id = Column(Integer, ForeignKey('tokens.id'))
@@ -41,21 +41,21 @@ class User(Base):
     def __init__(self, username: str, login: str, password: str, birth_day: str | None, email: str, *args, **kwargs):
         if not validate_password(password):
             raise ValueError('Invalid password')
-        
+
         if not validate_login(login):
             raise ValueError('Invalid login')
 
         if not validate_email(email):
             raise ValueError('Invalid email address')
-        
+
         if not is_safe_username(username):
             raise ValueError('Username not availible')
-        
+
         self.username = username
         self.login = login
         self.password = self.password = generate_password_hash(password)
-        self.email = email  
-        if birth_day != None:
+        self.email = email
+        if birth_day is not None:
             self.birth_day = datetime.fromisoformat(birth_day)
         for key, value in kwargs.items():
             setattr(self, key, value)

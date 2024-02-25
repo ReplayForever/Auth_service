@@ -1,6 +1,7 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Cookie, Depends, HTTPException, status
+from starlette.responses import Response
 
 from models.users import UserLogin, UserSuccessLogin, UserCreate, UserSuccessRefreshToken
 from services.auth import get_sign_up_service, SignUpService
@@ -11,10 +12,10 @@ router = APIRouter()
 @router.post('/signup/',
              description="Регистрация пользователя",
              status_code=status.HTTP_201_CREATED)
-async def signup(user_create: UserCreate, user_register: SignUpService = Depends(get_sign_up_service)) -> None:
+async def signup(user_create: UserCreate, user_register: SignUpService = Depends(get_sign_up_service)) -> Response:
     user = await user_register.get_data(user_create)
     if user:
-        return {"message": "Пользователь успешно зарегистрирован"}
+        return Response(status_code=status.HTTP_201_CREATED)
     else:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Ошибка при регистрации пользователя")
 

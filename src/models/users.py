@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, date
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -11,7 +11,7 @@ class UserCreate(BaseModel):
     first_name: str | None
     last_name: str | None
     email: str
-    birth_day: datetime | None
+    birth_day: date | None
     picture: str | None
 
 
@@ -46,14 +46,14 @@ class UserLogout(BaseModel):
 
 
 class UserProfileResult(BaseModel):
-    username: str
-    login: str
-    first_name: str
-    last_name: str
-    email: str
-    birth_day: str
-    role_id: str
-    picture: str
+    username: str | None
+    login: str | None
+    first_name: str | None
+    last_name: str | None
+    email: str | None
+    birth_day: date | None
+    role_id: str | None
+    picture: str | None
 
 
 class UserChangePassword(BaseModel):
@@ -63,14 +63,17 @@ class UserChangePassword(BaseModel):
 
 class UserProfileHistory(BaseModel):
     user_agent: str
-    auth_date: datetime
+    auth_date: date
 
 
 class ChangeUserProfile(BaseModel):
-    username: str | None
-    password: str | None
-    first_name: str | None
-    last_name: str | None
-    email: str | None
-    birth_day: datetime | None
-    picture: str | None
+    username: str | None = None
+    first_name: str | None = None
+    last_name: str | None = None
+    email: str | None = None
+    birth_day: date | None = None
+    picture: str | None = None
+
+
+class UserError(BaseModel):
+    detail: str | None

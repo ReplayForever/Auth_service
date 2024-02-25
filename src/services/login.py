@@ -25,8 +25,8 @@ class LoginService(AbstractService):
         refresh_token = await self._jwt.create_refresh_token(user_found.id)
         access_token = await self._jwt.create_access_token(user_found.id)
 
-        await self._jwt.set_refresh_token(refresh_token, user_agent=user_agent)
-        await self._jwt.set_access_token(access_token, user_found.id, user_found.role_id, 60)
+        await self._jwt.set_refresh_token(refresh_token, user_agent=user_agent, user_id=user_found.id)
+        await self._jwt.set_access_token(access_token, str(user_found.id), user_found.role_id, 3600)
 
         return UserSuccessLogin(refresh_token=refresh_token, access_token=access_token)
 

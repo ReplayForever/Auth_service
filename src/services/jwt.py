@@ -22,18 +22,12 @@ class JWT:
         self.redis = redis
 
     async def create_access_token(self, user_id: str) -> str:
-        try:
-            access_token = await self.authorize.create_access_token(subject=user_id)
-            return access_token
-        except Exception as e:
-            raise HTTPException(status_code=404, detail="User not found")
+        access_token = await self.authorize.create_access_token(subject=str(user_id))
+        return access_token
 
     async def create_refresh_token(self, user_id: str) -> str:
-        try:
-            refresh_token = await self.authorize.create_refresh_token(subject=user_id)
-            return refresh_token
-        except Exception as e:
-            raise HTTPException(status_code=404, detail='User not found')
+        refresh_token = await self.authorize.create_refresh_token(subject=str(user_id))
+        return refresh_token
 
     @staticmethod
     async def get_user_agent(request: Request) -> str:
@@ -45,8 +39,8 @@ class JWT:
         value = json.dumps(value)
         await self.redis.set(name=token, value=value, ex=expires_time)
 
-    async def set_refresh_token(self, token: str, user_agent: str):
-        new_token = Token(refresh_token=token, user_agent=user_agent)
+    async def set_refresh_token(self, token: str, user_agent: str, user_id: str):
+        new_token = Token(refresh_token=token, user_agent=user_agent, user_id=user_id)
         self.db.add(new_token)
         await self.db.commit()
 

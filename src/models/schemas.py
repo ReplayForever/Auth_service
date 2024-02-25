@@ -33,7 +33,7 @@ class User(Base):
     modified_at = Column(DateTime, default=datetime.utcnow)
     role_id = Column(Integer, ForeignKey('roles.id'))
     role = relationship('Role', back_populates='user')
-    token_id = Column(Integer, ForeignKey('tokens.id'))
+    # token_id = Column(Integer, ForeignKey('tokens.id'))
     token = relationship('Token', back_populates='user')
     login_history = relationship('LoginHistory', back_populates='user')
     is_active = Column(Boolean, default=False)
@@ -87,10 +87,11 @@ class Token(Base):
     __tablename__ = 'tokens'
 
     id = Column(Integer, primary_key=True, unique=True, nullable=False, autoincrement=True)
-    refresh_token = Column(String(255), unique=True)
+    refresh_token = Column(String(500), unique=True)
     user_agent = Column(String(255))
     created_at = Column(DateTime, default=datetime.utcnow)
     modified_at = Column(DateTime)
+    user_id = Column(ForeignKey('users.id'))
     user = relationship('User', back_populates='token')
 
 

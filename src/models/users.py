@@ -56,7 +56,7 @@ class UserProfileResult(BaseModel):
     last_name: str | None
     email: str | None
     birth_day: date | None
-    role_id: str | None
+    role_id: str | int | None
     picture: str | None
 
 

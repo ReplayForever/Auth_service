@@ -9,13 +9,14 @@ router = APIRouter()
 
 
 @router.post('/signup/',
-             description="Регистрация пользователя")
+             description="Регистрация пользователя",
+             status_code=status.HTTP_201_CREATED)
 async def signup(user_create: UserCreate, user_register: SignUpService = Depends(get_sign_up_service)) -> None:
     user = await user_register.get_data(user_create)
     if user:
         return {"message": "Пользователь успешно зарегистрирован"}
     else:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Ошибка при регистрации пользователя")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Ошибка при регистрации пользователя")
 
 
 @router.post('/login/',

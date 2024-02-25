@@ -40,4 +40,6 @@ class RoleAssign(BaseModel):
 class UserRole(BaseModel):
     user: UserProfileResult
     role: RoleInDB
-    
+
+class RoleError(BaseModel):
+    detail: str | None

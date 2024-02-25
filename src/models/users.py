@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, date
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -11,7 +11,7 @@ class UserCreate(BaseModel):
     first_name: str | None
     last_name: str | None
     email: str
-    birth_day: datetime | None
+    birth_day: date | None
     picture: str | None
 
 

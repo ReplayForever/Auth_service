@@ -51,7 +51,7 @@ class UserProfileResult(BaseModel):
     first_name: str | None
     last_name: str | None
     email: str | None
-    birth_day: datetime | None
+    birth_day: date | None
     role_id: str | None
     picture: str | None
 
@@ -63,7 +63,7 @@ class UserChangePassword(BaseModel):
 
 class UserProfileHistory(BaseModel):
     user_agent: str
-    auth_date: datetime
+    auth_date: date
 
 
 class ChangeUserProfile(BaseModel):
@@ -71,5 +71,9 @@ class ChangeUserProfile(BaseModel):
     first_name: str | None = None
     last_name: str | None = None
     email: str | None = None
-    birth_day: datetime | None = None
+    birth_day: date | None = None
     picture: str | None = None
+
+
+class UserError(BaseModel):
+    detail: str | None

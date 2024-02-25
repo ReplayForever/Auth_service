@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Boolean, Column, DateTime, String, Integer, ForeignKey, event
+from sqlalchemy import Boolean, Column, DateTime, String, Integer, ForeignKey, Date
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -26,7 +26,7 @@ class User(Base):
     first_name = Column(String(50), nullable=True)
     last_name = Column(String(50), nullable=True)
     email = Column(String(255), unique=True, nullable=False)
-    birth_day = Column(DateTime)
+    birth_day = Column(Date)
     picture = Column(String(255))
     is_verified_email = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)

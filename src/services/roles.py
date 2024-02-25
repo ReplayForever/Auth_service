@@ -20,8 +20,8 @@ class RoleGetService(AbstractService):
     async def get_data(self, token: str) -> list[RoleInDB]:
         token_info = await self._jwt.get_access_token(token)
         role = await self._db.get(Role, token_info["role_id"])
-        if not role.is_admin:
-            raise HTTPException(status_code=403, detail="Only admins can get all roles")
+        if not (role.is_admin or role.is_manager or role.is_superuser):
+            raise HTTPException(status_code=403, detail="Only admins, moderators, and superusers can get all roles")
         
         roles = await self._db.execute(select(Role))
         return [RoleInDB(**role._mapping) for role in roles]
@@ -35,8 +35,8 @@ class RoleCreateService(CreateAbstractService):
     async def create(self, role: CreateRole, token: str) -> RoleInDB:
         token_info = await self._jwt.get_access_token(token)
         role = await self._db.get(Role, token_info["role_id"])
-        if not role.is_admin:
-            raise HTTPException(status_code=403, detail="Only admins can create roles")
+        if not (role.is_admin or role.is_manager or role.is_superuser):
+            raise HTTPException(status_code=403, detail="Only admins, moderators, and superusers can create roles")
 
         new_role = Role(**role.dict())
         self._db.add(new_role)
@@ -53,8 +53,8 @@ class RoleDeleteService(DeleteAbstractService):
     async def delete(self, role_id: int, token: str) -> None:
         token_info = await self._jwt.get_access_token(token)
         role = await self._db.get(Role, token_info["role_id"])
-        if not role.is_admin:
-            raise HTTPException(status_code=403, detail="Only admins can delete roles")
+        if not (role.is_admin or role.is_manager or role.is_superuser):
+            raise HTTPException(status_code=403, detail="Only admins, moderators, and superusers can delete roles")
 
         role = await self._db.get(Role, role_id)
         if not role:
@@ -68,13 +68,13 @@ class RoleDeleteService(DeleteAbstractService):
 class RoleUpdateService(PatchAbstractService):
     def __init__(self, db: AsyncSession, jwt: JWT):
         self._db = db
-        # self._jwt = jwt
+        self._jwt = jwt
 
     async def patch(self, role_id: int, role_update: RoleChangePermission, token: str) -> RoleInDB:
         token_info = await self._jwt.get_access_token(token)
         role = await self._db.get(Role, token_info["role_id"])
-        if not role.is_admin:
-            raise HTTPException(status_code=403, detail="Only admins update roles")
+        if not (role.is_admin or role.is_manager or role.is_superuser):
+            raise HTTPException(status_code=403, detail="Only admins, moderators, and superusers can update roles")
 
         role = await self._db.get(Role, role_id)
         if not role:

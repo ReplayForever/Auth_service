@@ -33,7 +33,6 @@ class User(Base):
     modified_at = Column(DateTime, default=datetime.utcnow)
     role_id = Column(Integer, ForeignKey('roles.id'))
     role = relationship('Role', back_populates='user')
-    # token_id = Column(Integer, ForeignKey('tokens.id'))
     token = relationship('Token', back_populates='user')
     login_history = relationship('LoginHistory', back_populates='user')
     is_active = Column(Boolean, default=False)

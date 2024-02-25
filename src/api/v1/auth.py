@@ -22,12 +22,16 @@ async def signup(user_create: UserCreate, user_register: SignUpService = Depends
 
 
 @router.post('/login/',
-             description="Аутентификация пользователя")
+             description="Аутентификация пользователя",
+             status_code=status.HTTP_201_CREATED,
+             response_model=UserSuccessLogin)
 async def login(user_auth: UserLogin,
                 user_login: LoginService = Depends(get_login_service),
                 user_agent: str = Header("")) -> UserSuccessLogin:
-    result = await user_login.get_data(user_auth, user_agent)
-    return result
+    tokens = await user_login.get_data(user_auth, user_agent)
+    if not tokens:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Ошибка при логине")
+    return tokens
 
 
 @router.post('/logout/',

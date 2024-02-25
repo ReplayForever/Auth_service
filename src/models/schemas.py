@@ -99,7 +99,7 @@ class LoginHistory(Base):
 
     id = Column(Integer, primary_key=True, unique=True, nullable=False, autoincrement=True)
     user_agent = Column(String(255))
-    auth_date = Column(DateTime)
+    auth_date = Column(DateTime, default=datetime.utcnow)
     created_at = Column(DateTime, default=datetime.utcnow)
     modified_at = Column(DateTime)
     user_id = Column(ForeignKey('users.id'))

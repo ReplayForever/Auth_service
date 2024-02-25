@@ -1,6 +1,7 @@
 from functools import lru_cache
 
 from fastapi import Depends
+from fastapi.encoders import jsonable_encoder
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from db.postgres import get_session
@@ -14,7 +15,7 @@ class SignUpService(AbstractService):
         self._db = db
 
     async def get_data(self, user_create: UserCreate):
-        user = User(**user_create.dict())
+        user = User(**jsonable_encoder(user_create))
         self._db.add(user)
         await self._db.commit()
         await self._db.refresh(user)

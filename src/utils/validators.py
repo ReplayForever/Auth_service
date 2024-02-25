@@ -2,7 +2,7 @@ import re
 
 
 def validate_login(login: str) -> bool:
-    if not re.match("^[a-zA-Z0-9_-]+$", login):
+    if not re.match(r"^[a-zA-Z0-9_-]+$", login):
         return False
     if len(login) < 6 or (len(login) > 255):
         return False
@@ -16,6 +16,4 @@ def validate_email(email: str) -> bool:
 
 
 def validate_password(password: str) -> bool:
-    if not re.match(r"^(?!.*(.)\1\1)(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])[0-9a-zA-Z!@#$%^&*]{8,}$", password):
-        return False
-    return True
+    return bool(re.match(r"^(?=.*\d)(?=.*[A-Z])(?=.*[a-z])(?=.*[!@#$%^&*()]).{8,50}$", password))

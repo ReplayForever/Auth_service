@@ -1,12 +1,16 @@
 import json
+from functools import lru_cache
 
 from async_fastapi_jwt_auth import AuthJWT
-from fastapi import Request, HTTPException
+from fastapi import Request, HTTPException, Depends
+from redis import exceptions
 from redis.asyncio import Redis
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
+from db.postgres import get_session
+from db.redis import get_redis
 from models.tokens import AccessTokenInDB
 from models.schemas import Token, User
 
@@ -46,14 +50,15 @@ class JWT:
         self.db.add(new_token)
         await self.db.commit()
 
-    async def get_access_token(self, user_id: str):
+    async def get_access_token(self, token: str):
         try:
-            if not await self.redis.exists(user_id):
+            if not await self.redis.exists(token):
                 raise HTTPException(status_code=404, detail="User not found in Redis")
 
-            token = await self.redis.get(name=user_id)
-            return token
-        except Exception:
+            user_id = await self.redis.get(name=token)
+            return json.loads(user_id)
+
+        except exceptions.ConnectionError:
             raise HTTPException(status_code=503, detail="Unable to connect to Redis")
 
 
@@ -69,3 +74,10 @@ async def get_refresh_token(self, user_id: str) -> AccessTokenInDB:
         raise HTTPException(status_code=500, detail="Database error")
 
 
+@lru_cache()
+def get_jwt(
+        db: AsyncSession = Depends(get_session),
+        authorize: AuthJWT = Depends(),
+        redis: Redis = Depends(get_redis),
+) -> JWT:
+    return JWT(db, authorize, redis)

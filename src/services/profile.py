@@ -1,17 +1,15 @@
 import datetime
 from functools import lru_cache
 
-from async_fastapi_jwt_auth import AuthJWT
 from fastapi import Depends, HTTPException
-from redis.asyncio import Redis
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from starlette import status
 from werkzeug.security import generate_password_hash
 
 from db.postgres import get_session
-from db.redis import get_redis
-from models.schemas import User
-from models.users import UserProfileResult, UserChangePassword, ChangeUserProfile
+from models.schemas import User, LoginHistory
+from models.users import UserProfileResult, UserChangePassword, ChangeUserProfile, UserProfileHistory, Paginator
 from services.abstract import AbstractService, PatchAbstractService
 from services.jwt import JWT, get_jwt
 from utils.validators import validate_password
@@ -27,6 +25,30 @@ class ProfileInfoService(AbstractService):
 
         user = await self._db.get(User, token_info['id'])
         return UserProfileResult(**user.__dict__)
+
+
+class ProfileHistoryService(AbstractService):
+    def __init__(self, db: AsyncSession, jwt: JWT):
+        self._db = db
+        self._jwt = jwt
+
+    async def get_data(self, token, page, limit) -> Paginator:
+        token_info = await self._jwt.get_access_token(token)
+
+        history = await self._db.execute(
+            select(LoginHistory).offset((page-1)*limit).limit(limit).where(LoginHistory.user_id == token_info['id'])
+        )
+
+        history_list = []
+        for login_history in history.fetchall():
+            history_list.append(UserProfileHistory(**login_history[0].__dict__))
+
+        if not history_list and page > 1:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Page not found')
+        elif not history_list:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='History not found')
+
+        return Paginator(page=page, limit=limit, results=history_list)
 
 
 class ProfileUpdateInfoService(PatchAbstractService):
@@ -76,6 +98,14 @@ def get_profile_info_service(
         jwt: JWT = Depends(get_jwt),
 ) -> ProfileInfoService:
     return ProfileInfoService(db, jwt)
+
+
+@lru_cache()
+def get_profile_history_service(
+        db: AsyncSession = Depends(get_session),
+        jwt: JWT = Depends(get_jwt),
+) -> ProfileHistoryService:
+    return ProfileHistoryService(db, jwt)
 
 
 @lru_cache()

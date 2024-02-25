@@ -24,14 +24,14 @@ class JWT:
 
     async def create_access_token(self, user_id: str) -> str:
         try:
-            access_token = await self.authorize.create_access_token(subject=user_id)
+            access_token = await self.authorize.create_access_token(subject=str(user_id))
             return access_token
         except Exception as e:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='User not found')
 
     async def create_refresh_token(self, user_id: str) -> str:
         try:
-            refresh_token = await self.authorize.create_refresh_token(subject=user_id)
+            refresh_token = await self.authorize.create_refresh_token(subject=str(user_id))
             return refresh_token
         except Exception as e:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='User not found')
@@ -46,8 +46,8 @@ class JWT:
         value = json.dumps(value)
         await self.redis.set(name=token, value=value, ex=expires_time)
 
-    async def set_refresh_token(self, token: str, user_agent: str):
-        new_token = Token(refresh_token=token, user_agent=user_agent)
+    async def set_refresh_token(self, token: str, user_agent: str, user_id: str):
+        new_token = Token(refresh_token=token, user_agent=user_agent, user_id=user_id)
         self.db.add(new_token)
         await self.db.commit()
 
@@ -56,13 +56,13 @@ class JWT:
             if token is None:
                 raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
             elif not await self.redis.exists(token):
-                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found in Redis")
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='User not found in Redis')
 
             user_id = await self.redis.get(name=token)
             return json.loads(user_id)
 
         except exceptions.ConnectionError:
-            raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Unable to connect to Redis")
+            raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail='Unable to connect to Redis')
 
 
 async def get_refresh_token(self, user_id: str) -> AccessTokenInDB:
@@ -71,10 +71,10 @@ async def get_refresh_token(self, user_id: str) -> AccessTokenInDB:
         result = await self.db.execute(stmt)
         token = result.scalars().first()
         if token is None:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Token not found for the user")
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Token not found for the user')
         return token
     except SQLAlchemyError as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Database error: %s" % str(e))
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail='Database error: %s' % str(e))
 
 
 @lru_cache()

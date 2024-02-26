@@ -23,7 +23,7 @@ class ProfileInfoService(AbstractService):
     async def get_data(self, token) -> UserProfileResult:
         token_info = await self._jwt.get_access_token(token)
 
-        user = await self._db.get(User, token_info['id'])
+        user = await self._db.get(User, token_info['user_id'])
         return UserProfileResult(**user.__dict__)
 
 
@@ -36,7 +36,9 @@ class ProfileHistoryService(AbstractService):
         token_info = await self._jwt.get_access_token(token)
 
         history = await self._db.execute(
-            select(LoginHistory).offset((page-1)*limit).limit(limit).where(LoginHistory.user_id == token_info['id'])
+            select(LoginHistory).offset((page-1)*limit).limit(limit).where(
+                LoginHistory.user_id == token_info['user_id']
+            )
         )
 
         history_list = []
@@ -58,7 +60,7 @@ class ProfileUpdateInfoService(PatchAbstractService):
 
     async def patch(self, token, user_info: ChangeUserProfile) -> UserProfileResult:
         token_info = await self._jwt.get_access_token(token)
-        user = await self._db.get(User, token_info['id'])
+        user = await self._db.get(User, token_info['user_id'])
 
         for attr, value in user_info.dict().items():
             if value:
@@ -78,7 +80,7 @@ class UpdatePasswordService(PatchAbstractService):
 
     async def patch(self, token, passwords: UserChangePassword) -> None:
         token_info = await self._jwt.get_access_token(token)
-        user = await self._db.get(User, token_info['id'])
+        user = await self._db.get(User, token_info['user_id'])
 
         if not user.check_password(passwords.password):
             raise HTTPException(status_code=400, detail='Wrong password')

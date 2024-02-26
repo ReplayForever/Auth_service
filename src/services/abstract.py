@@ -21,3 +21,17 @@ class PostAbstractService(ABC):
     @abstractmethod
     def post(self, *args, **kwargs):
         ...
+
+
+class CreateAbstractService(ABC):
+
+    @abstractmethod
+    def create(self, *args, **kwargs):
+        ...
+
+
+class DeleteAbstractService(ABC):
+
+    @abstractmethod
+    def delete(self, *args, **kwargs):
+        ...

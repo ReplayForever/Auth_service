@@ -5,14 +5,19 @@ from models.users import UserProfileResult
 class CreateRole(BaseModel):
     name: str
     description: str
+    is_subscriber: bool | None
+    is_superuser: bool | None
+    is_manager: bool | None
+    is_admin: bool | None
 
 
 class RoleInDB(BaseModel):
     id: int
     name: str
-
-    class Config:
-        from_attributes = True
+    is_subscriber: bool
+    is_superuser: bool
+    is_manager: bool
+    is_admin: bool
 
 
 class RoleDelete(BaseModel):
@@ -22,6 +27,10 @@ class RoleDelete(BaseModel):
 class RoleChangePermission(BaseModel):
     role_id: int
     name: str
+    is_subscriber: bool | None
+    is_superuser: bool | None
+    is_manager: bool | None
+    is_admin: bool | None
 
 
 class RoleAssign(BaseModel):
@@ -32,4 +41,6 @@ class RoleAssign(BaseModel):
 class UserRole(BaseModel):
     user: UserProfileResult
     role: RoleInDB
-    
+
+class RoleError(BaseModel):
+    detail: str | None

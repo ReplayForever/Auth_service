@@ -83,7 +83,7 @@ class RoleUpdateService(PatchAbstractService):
         for field, value in role_update.dict(exclude_unset=True).items():
             setattr(role, field, value)
 
-        role.updated_at = datetime.datetime.now()
+        role.modified_at = datetime.datetime.now()
 
         await self._db.commit()
         await self._db.refresh(role)

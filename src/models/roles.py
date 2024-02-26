@@ -37,6 +37,7 @@ class RoleAssign(BaseModel):
     user_id: str
     role_id: int
 
+
 class UserRole(BaseModel):
     user: UserProfileResult
     role: RoleInDB

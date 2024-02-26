@@ -1,7 +1,11 @@
 from datetime import datetime, date
+from typing import List, TypeVar, Generic
 from uuid import UUID
 
 from pydantic import BaseModel
+
+
+T = TypeVar('T')
 
 
 class UserCreate(BaseModel):
@@ -62,8 +66,8 @@ class UserChangePassword(BaseModel):
 
 
 class UserProfileHistory(BaseModel):
-    user_agent: str
-    auth_date: date
+    user_agent: str | None = None
+    auth_date: datetime
 
 
 class ChangeUserProfile(BaseModel):
@@ -77,3 +81,9 @@ class ChangeUserProfile(BaseModel):
 
 class UserError(BaseModel):
     detail: str | None
+
+
+class Paginator(BaseModel, Generic[T]):
+    page: int
+    limit: int
+    results: List[T]

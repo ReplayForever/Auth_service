@@ -59,7 +59,6 @@ class User(Base):
         for key, value in kwargs.items():
             setattr(self, key, value)
 
-
     def check_password(self, password: str) -> bool:
         return check_password_hash(self.password, password)
 
@@ -78,7 +77,7 @@ class Role(Base):
     is_manager = Column(Boolean, default=False)
     is_admin = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)
-    modified_at = Column(DateTime)
+    modified_at = Column(DateTime, default=datetime.utcnow)
     user = relationship('User', back_populates='role')
 
 
@@ -89,7 +88,7 @@ class Token(Base):
     refresh_token = Column(String(500), unique=True)
     user_agent = Column(String(255))
     created_at = Column(DateTime, default=datetime.utcnow)
-    modified_at = Column(DateTime)
+    modified_at = Column(DateTime, default=datetime.utcnow)
     user_id = Column(ForeignKey('users.id'))
     user = relationship('User', back_populates='token')
 
@@ -101,6 +100,6 @@ class LoginHistory(Base):
     user_agent = Column(String(255))
     auth_date = Column(DateTime, default=datetime.utcnow)
     created_at = Column(DateTime, default=datetime.utcnow)
-    modified_at = Column(DateTime)
+    modified_at = Column(DateTime, default=datetime.utcnow)
     user_id = Column(ForeignKey('users.id'))
     user = relationship('User', back_populates='login_history')

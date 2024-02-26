@@ -13,3 +13,17 @@ class PatchAbstractService(ABC):
     @abstractmethod
     def patch(self, *args, **kwargs):
         ...
+
+
+class CreateAbstractService(ABC):
+
+    @abstractmethod
+    def create(self, *args, **kwargs):
+        ...
+
+
+class DeleteAbstractService(ABC):
+
+    @abstractmethod
+    def delete(self, *args, **kwargs):
+        ...

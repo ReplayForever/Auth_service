@@ -9,7 +9,7 @@ from db.postgres import get_session
 from models.roles import RoleAssign, UserRole, RoleInDB
 from models.schemas import Role, User
 from models.users import UserProfileResult
-from services.abstract import PostAbstractService
+from services.abstract import PostAbstractService, AbstractService
 from services.jwt import JWT, get_jwt
 
 
@@ -38,6 +38,23 @@ class UpdateUserRoleService(PostAbstractService):
         await self._db.refresh(user)
 
         return UserRole(user=UserProfileResult(**user.__dict__), role=RoleInDB(**role.__dict__))
+    
+
+class GetUserRoleService(AbstractService):
+    def __init__(self, db: AsyncSession, jwt: JWT):
+        self._db = db
+        self._jwt = jwt
+
+    async def get_data(self, token, user_id ) -> UserRole:
+        token_info = await self._jwt.get_access_token(token)
+        role = await self._db.get(Role, token_info["role_id"])
+        user = await self._db.get(User, user_id)
+        if not role:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Role not found")
+        if not user:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+
+        return UserRole(user=UserProfileResult(**user.__dict__), role=RoleInDB(**role.__dict__))
 
 
 @lru_cache()
@@ -46,3 +63,10 @@ def update_user_role_service(
         jwt: JWT = Depends(get_jwt),
 ) -> UpdateUserRoleService:
     return UpdateUserRoleService(db, jwt)
+
+@lru_cache()
+def get_user_role_service(
+        db: AsyncSession = Depends(get_session),
+        jwt: JWT = Depends(get_jwt),
+) -> GetUserRoleService:
+    return GetUserRoleService(db, jwt)

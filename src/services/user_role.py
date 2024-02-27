@@ -28,7 +28,7 @@ class UpdateUserRoleService(PostAbstractService):
         if not role:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Role not found")
         user = await self._db.get(User, role_assign.user_id)
-        if not role:
+        if not user:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
         user.role_id = role_assign.role_id

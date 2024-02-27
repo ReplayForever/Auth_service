@@ -55,7 +55,7 @@ class JWT:
         try:
             if token is None:
                 raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
-            elif not await self.redis.exists(token):
+            elif await self.redis.exists(token):
                 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='User not found in Redis')
 
             user_id = await self.redis.get(name=token)

@@ -6,6 +6,8 @@ from starlette.responses import Response
 from models.users import UserLogin, UserSuccessLogin, UserCreate, UserSuccessRefreshToken
 from services.auth import get_sign_up_service, SignUpService
 from services.login import LoginService, get_login_service
+from services.logout import LogoutService, get_logout_service
+from services.refresh import RefreshService, get_refresh_service
 
 router = APIRouter()
 
@@ -34,13 +36,18 @@ async def login(user_auth: UserLogin,
     return tokens
 
 
-@router.post('/logout/',
-             description="Выход пользователя из сессии")
-async def logout(full_logout: bool = False, access_token: Annotated[str | None, Cookie()] = None) -> None:
-    return None
+@router.delete('/logout/',
+               description="Выход пользователя из сессии",
+               status_code=status.HTTP_200_OK)
+async def logout(full_logout: bool = False,
+                 user_logout: LogoutService = Depends(get_logout_service)) -> dict:
+    await user_logout.delete()
+    return {"msg": "Усешный выход из системы"}
 
 
 @router.post('/refresh/',
-             description="Обновление токенов")
-async def token_refresh(refresh_token: Annotated[str | None, Cookie()] = None) -> UserSuccessRefreshToken:
-    return None
+             description="Обновление токенов",
+             status_code=status.HTTP_201_CREATED)
+async def token_refresh(user_token_refresh: RefreshService = Depends(get_refresh_service)):
+    await user_token_refresh.post()
+    return {"msg": "Токены были изменены"}

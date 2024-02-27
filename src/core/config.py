@@ -45,6 +45,7 @@ settings = Settings()
 
 
 class JWTSettings(BaseModel):
-    authjwt_secret_key: str = 'secret'
-    authjwt_token_location: set = {'cookies'}
-    authjwt_token_csrf_protect: bool = False
+    authjwt_secret_key: str = "secret"
+    authjwt_token_location: set = {"cookies"}
+    authjwt_cookie_secure: bool = False
+    authjwt_cookie_csrf_protect: bool = False

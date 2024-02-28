@@ -7,6 +7,7 @@ from models.users import UserLogin, UserSuccessLogin, UserCreate, UserSuccessRef
 from services.auth import get_sign_up_service, SignUpService
 from services.login import LoginService, get_login_service
 from services.logout import LogoutService, get_logout_service
+from services.refresh import RefreshService, get_refresh_service
 
 # from services.logout import LogoutService, get_logout_service
 # from services.refresh import RefreshService, get_refresh_service
@@ -47,10 +48,10 @@ async def logout(request: Request,
     await user_logout.delete(request)
     return {"msg": "Успешный выход из системы"}
 
-#
-# @router.post('/refresh/',
-#              description="Обновление токенов",
-#              status_code=status.HTTP_201_CREATED)
-# async def token_refresh(user_token_refresh: RefreshService = Depends(get_refresh_service)):
-#     await user_token_refresh.post()
-#     return {"msg": "Токены были изменены"}
+
+@router.post('/refresh/',
+             description="Обновление токенов",
+             status_code=status.HTTP_201_CREATED)
+async def token_refresh(user_token_refresh: RefreshService = Depends(get_refresh_service)):
+    await user_token_refresh.post()
+    return {"msg": "Токены были изменены"}

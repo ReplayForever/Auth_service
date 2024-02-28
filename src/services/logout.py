@@ -22,7 +22,7 @@ class LogoutService(DeleteAbstractService):
 
         await self._authorize.unset_jwt_cookies()
 
-        await self._redis_token.set(name=access_token, value=jwt_subject, ex=10)
+        await self._redis_token.set(name=access_token, value=jwt_subject, ex=900)
 
 
 @lru_cache()

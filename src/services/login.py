@@ -8,28 +8,26 @@ from models.schemas import User, LoginHistory
 from sqlalchemy import select
 from werkzeug.security import check_password_hash
 from models.users import UserLogin, UserSuccessLogin
-from services.jwt import JWT, get_jwt
 from services.abstract import AbstractService
+from async_fastapi_jwt_auth import AuthJWT
 
 
 class LoginService(AbstractService):
-    def __init__(self, db: AsyncSession, jwt: JWT):
+    def __init__(self, db: AsyncSession, authorize: AuthJWT):
         self._db = db
-        self._jwt = jwt
+        self._authorize = authorize
 
     async def get_data(self, user: UserLogin, user_agent: str):
         user_found = await self.get_by_login(user.login)
         if not user_found:
             return None
         await self.check_password(user)
-        refresh_token = await self._jwt.create_refresh_token(user_found.id)
-        access_token = await self._jwt.create_access_token(user_found.id)
+        refresh_token = await self._authorize.create_refresh_token(subject=str(user_found.id))
+        access_token = await self._authorize.create_access_token(subject=str(user_found.id),
+                                                                 user_claims={'role_id': user_found.role_id})
 
-        await self._jwt.authorize.set_access_cookies(access_token)
-        await self._jwt.authorize.set_refresh_cookies(refresh_token)
-
-        await self._jwt.set_refresh_token(refresh_token, user_agent=user_agent, user_id=user_found.id)
-        # await self._jwt.set_access_token(access_token, str(user_found.id), user_found.role_id, 3600)
+        await self._authorize.set_access_cookies(access_token)
+        await self._authorize.set_refresh_cookies(refresh_token)
 
         await self.set_by_login_history(user_id=user_found.id, user_agent=user_agent)
 
@@ -59,6 +57,6 @@ class LoginService(AbstractService):
 @lru_cache()
 def get_login_service(
         db: AsyncSession = Depends(get_session),
-        jwt: JWT = Depends(get_jwt),
+        authorize: AuthJWT = Depends(),
 ) -> LoginService:
-    return LoginService(db, jwt)
+    return LoginService(db, authorize)

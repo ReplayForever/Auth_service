@@ -1,13 +1,15 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Cookie, Depends, HTTPException, status, Header
+from fastapi import APIRouter, Cookie, Depends, HTTPException, status, Header, Request
 from starlette.responses import Response
 
 from models.users import UserLogin, UserSuccessLogin, UserCreate, UserSuccessRefreshToken
 from services.auth import get_sign_up_service, SignUpService
 from services.login import LoginService, get_login_service
 from services.logout import LogoutService, get_logout_service
-from services.refresh import RefreshService, get_refresh_service
+
+# from services.logout import LogoutService, get_logout_service
+# from services.refresh import RefreshService, get_refresh_service
 
 router = APIRouter()
 
@@ -39,15 +41,16 @@ async def login(user_auth: UserLogin,
 @router.delete('/logout/',
                description="Выход пользователя из сессии",
                status_code=status.HTTP_200_OK)
-async def logout(full_logout: bool = False,
+async def logout(request: Request,
+                 full_logout: bool = False,
                  user_logout: LogoutService = Depends(get_logout_service)) -> dict:
-    await user_logout.delete()
-    return {"msg": "Усешный выход из системы"}
+    await user_logout.delete(request)
+    return {"msg": "Успешный выход из системы"}
 
-
-@router.post('/refresh/',
-             description="Обновление токенов",
-             status_code=status.HTTP_201_CREATED)
-async def token_refresh(user_token_refresh: RefreshService = Depends(get_refresh_service)):
-    await user_token_refresh.post()
-    return {"msg": "Токены были изменены"}
+#
+# @router.post('/refresh/',
+#              description="Обновление токенов",
+#              status_code=status.HTTP_201_CREATED)
+# async def token_refresh(user_token_refresh: RefreshService = Depends(get_refresh_service)):
+#     await user_token_refresh.post()
+#     return {"msg": "Токены были изменены"}

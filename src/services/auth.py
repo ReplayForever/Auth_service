@@ -22,20 +22,22 @@ class SignUpService(AbstractService):
 
         try:
             result = await self._db.execute(select(Role).where(
-                Role.is_admin == False,
+    Role.is_admin == False,
                 Role.is_subscriber == False,
                 Role.is_superuser == False,
                 Role.is_manager == False
             ))
             role = result.fetchone()
+            if role is None:
+                raise NoResultFound
         except NoResultFound:
             unique_name = str(uuid.uuid4())
-            role = Role(name = unique_name, 
-                        description = "Base user role", 
-                        is_admin=False, 
-                        is_superuser = False, 
-                        is_subscriber = False,
-                        is_manager = False)
+            role = Role(name=unique_name,
+                        description="Base user role",
+                        is_admin=False,
+                        is_superuser=False,
+                        is_subscriber=False,
+                        is_manager=False)
             self._db.add(role)
             await self._db.commit()
             await self._db.refresh(role)

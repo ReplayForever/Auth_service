@@ -3,11 +3,11 @@ from functools import lru_cache
 from fastapi import Depends, Request
 from async_fastapi_jwt_auth import AuthJWT
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, update
 
 from models.users import UserSuccessRefreshToken
 from services.abstract import PostAbstractService
-from models.schemas import User, LoginHistory
+from models.schemas import User, LoginHistory, Token
 from db.postgres import get_session
 
 
@@ -42,6 +42,14 @@ class RefreshService(PostAbstractService):
         current_user_agent = request.headers.get("User-Agent")
         return current_user_agent
 
+    async def update_refresh_token_in_db(self, user_id: str, new_refresh_token: str):
+        await self._db.execute(
+            update(Token).where(
+                Token.user_id == user_id
+            ).values(refresh_token=new_refresh_token)
+        )
+        await self._db.commit()
+
     async def post(self, request: Request):
         await self._authorize.jwt_refresh_token_required()
 
@@ -58,6 +66,8 @@ class RefreshService(PostAbstractService):
 
             await self._authorize.set_access_cookies(new_access_token)
             await self._authorize.set_refresh_cookies(new_refresh_token)
+
+            await self.update_refresh_token_in_db(user_id, new_refresh_token)
 
             return UserSuccessRefreshToken(access_token=new_access_token, refresh_token=new_refresh_token)
         else:

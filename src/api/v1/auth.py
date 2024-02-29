@@ -1,12 +1,9 @@
-from typing import Annotated
-
-from fastapi import APIRouter, Cookie, Depends, HTTPException, status, Header, Request
+from fastapi import APIRouter,Depends, HTTPException, status, Header, Request
 from starlette.responses import Response
 
-from models.users import UserLogin, UserSuccessLogin, UserCreate, UserSuccessRefreshToken
-from services.auth import get_sign_up_service, SignUpService
-from services.login import LoginService, get_login_service
-from services.logout import LogoutService, get_logout_service
+from models.users import UserLogin, UserSuccessLogin, UserCreate
+from services.auth import (get_sign_up_service, SignUpService, LoginService, get_login_service, LogoutService,
+                           get_logout_service)
 from services.refresh import RefreshService, get_refresh_service
 
 # from services.logout import LogoutService, get_logout_service

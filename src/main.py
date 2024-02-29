@@ -13,14 +13,11 @@ from api.v1 import auth, profile, user_role, roles
 from core.config import settings, JWTSettings
 from core.logger import LOGGING
 from db import redis
-from db.postgres import create_database
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
 
-    from models.schemas import User, Role, Token, LoginHistory
-    await create_database()
     redis.redis = Redis(host=settings.redis.host, port=settings.redis.port)
 
     yield
@@ -38,12 +35,6 @@ app = FastAPI(
     version="1.0.0",
     lifespan=lifespan
 )
-
-
-# @app.on_event('startup')
-# async def startup():
-#     from models.schemas import User, Role, Token, LoginHistory
-#     await create_database()
 
 
 app.include_router(auth.router, prefix='/api/v1', tags=['auth'])

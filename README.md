@@ -32,7 +32,12 @@ docker compose up docker-compose.yml
 docker compose up docker-compose.dev.yml
 ```
 
-4. Тесты автоматически запускаются после запуска [docker-compose.dev.yml](docker-compose.dev.yml)
+4. Для применения миграций при локальной разработке необходимо находясь в папке [src](src) выполнить команду:
+```shell
+alembic upgrade head
+```
+
+5. Тесты автоматически запускаются после запуска [docker-compose.dev.yml](docker-compose.dev.yml)
 
 Для отдельного запуска тестов необходимо запустить:
 ```shell

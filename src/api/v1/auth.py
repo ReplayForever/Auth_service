@@ -52,6 +52,9 @@ async def logout(request: Request,
 @router.post('/refresh/',
              description="Обновление токенов",
              status_code=status.HTTP_201_CREATED)
-async def token_refresh(user_token_refresh: RefreshService = Depends(get_refresh_service)):
-    await user_token_refresh.post()
-    return {"msg": "Токены были изменены"}
+async def token_refresh(request: Request,
+                        user_token_refresh: RefreshService = Depends(get_refresh_service)) -> UserSuccessLogin:
+    tokens = await user_token_refresh.post(request)
+    if not tokens:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Ошибка при обновлении токенов')
+    return tokens

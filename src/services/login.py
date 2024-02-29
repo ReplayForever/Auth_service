@@ -4,7 +4,7 @@ from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from db.postgres import get_session
-from models.schemas import User, LoginHistory
+from models.schemas import User, LoginHistory, Token
 from sqlalchemy import select
 from werkzeug.security import check_password_hash
 from models.users import UserLogin, UserSuccessLogin
@@ -30,6 +30,8 @@ class LoginService(AbstractService):
         await self._authorize.set_refresh_cookies(refresh_token)
 
         await self.set_by_login_history(user_id=user_found.id, user_agent=user_agent)
+        await self.set_refresh_token(user_id=user_found.id, user_agent=user_agent,
+                                     refresh_token=refresh_token)
 
         return UserSuccessLogin(refresh_token=refresh_token, access_token=access_token)
 
@@ -51,6 +53,11 @@ class LoginService(AbstractService):
     async def set_by_login_history(self, user_id: str, user_agent: str):
         history = LoginHistory(user_id=user_id, user_agent=user_agent)
         self._db.add(history)
+        await self._db.commit()
+
+    async def set_refresh_token(self, user_id: str, user_agent: str, refresh_token: str):
+        token = Token(user_id=user_id, user_agent=user_agent, refresh_token=refresh_token)
+        self._db.add(token)
         await self._db.commit()
 
 

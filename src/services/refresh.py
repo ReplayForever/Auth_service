@@ -1,12 +1,13 @@
 from functools import lru_cache
 
-from fastapi import Depends
+from fastapi import Depends, Request
 from async_fastapi_jwt_auth import AuthJWT
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
+from models.users import UserSuccessRefreshToken
 from services.abstract import PostAbstractService
-from models.schemas import User
+from models.schemas import User, LoginHistory
 from db.postgres import get_session
 
 
@@ -22,20 +23,45 @@ class RefreshService(PostAbstractService):
             user = user_row[0]
             role_id = user.role_id
         else:
-            raise "Юзер не найден"
+            raise Exception("Пройдите повторый логин")
         return role_id
 
-    async def post(self):
+    async def find_user_agents(self, user_id: str):
+        result = await self._db.execute(select(LoginHistory.user_agent).where(LoginHistory.user_id == user_id))
+        history_rows = result.fetchall()
+        user_agents = []
+        if history_rows:
+            for row in history_rows:
+                user_agents.append(row)
+        else:
+            raise "User-Agent не найден"
+        return user_agents
+
+    @staticmethod
+    async def find_current_user_agent(request: Request):
+        current_user_agent = request.headers.get("User-Agent")
+        return current_user_agent
+
+    async def post(self, request: Request):
         await self._authorize.jwt_refresh_token_required()
 
         user_id = await self._authorize.get_jwt_subject()
         role_id = await self.find_user_role_id(user_id)
 
-        new_access_token = await self._authorize.create_access_token(subject=user_id, user_claims={"role_id": role_id})
-        new_refresh_token = await self._authorize.create_refresh_token(subject=user_id)
+        user_agents = await self.find_user_agents(user_id)
 
-        await self._authorize.set_access_cookies(new_access_token)
-        await self._authorize.set_refresh_cookies(new_refresh_token)
+        user_agents = [row[0] for row in user_agents]
+        current_user_agent = await self.find_current_user_agent(request)
+        if current_user_agent in user_agents:
+            new_access_token = await self._authorize.create_access_token(subject=user_id, user_claims={"role_id": role_id})
+            new_refresh_token = await self._authorize.create_refresh_token(subject=user_id)
+
+            await self._authorize.set_access_cookies(new_access_token)
+            await self._authorize.set_refresh_cookies(new_refresh_token)
+
+            return UserSuccessRefreshToken(access_token=new_access_token, refresh_token=new_refresh_token)
+        else:
+            raise Exception("Пожалуйста, пройдите повторный логин в систему")
 
 
 @lru_cache()

@@ -29,7 +29,7 @@ class SignUpService(AbstractService):
             ))
             role = result.fetchone()
             if role is None:
-                raise NoResultFound
+                raise 'Нет такой роли'
         except NoResultFound:
             unique_name = str(uuid.uuid4())
             role = Role(name=unique_name,

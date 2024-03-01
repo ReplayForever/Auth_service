@@ -23,7 +23,7 @@ class RefreshService(PostAbstractService):
             user = user_row[0]
             role_id = user.role_id
         else:
-            raise Exception("Пройдите повторый логин")
+            raise Exception("Please login again")
         return role_id
 
     async def find_user_agents(self, user_id: str):
@@ -34,7 +34,7 @@ class RefreshService(PostAbstractService):
             for row in history_rows:
                 user_agents.append(row)
         else:
-            raise "User-Agent не найден"
+            raise "User-Agent not found"
         return user_agents
 
     @staticmethod
@@ -51,7 +51,7 @@ class RefreshService(PostAbstractService):
         await self._db.commit()
 
     async def post(self, request: Request):
-        await self._authorize.jwt_refresh_token_required()
+        await self._authorize.jwt_required()
 
         user_id = await self._authorize.get_jwt_subject()
         role_id = await self.find_user_role_id(user_id)
@@ -71,7 +71,7 @@ class RefreshService(PostAbstractService):
 
             return UserSuccessRefreshToken(access_token=new_access_token, refresh_token=new_refresh_token)
         else:
-            raise Exception("Пожалуйста, пройдите повторный логин в систему")
+            raise Exception("Please login again")
 
 
 @lru_cache()

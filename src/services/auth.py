@@ -32,26 +32,33 @@ class SignUpService(AbstractService):
                 Role.is_manager == False
             ))
             role = result.fetchone()
+
             if role is None:
-                raise NoResultFound('Нет такой роли')
+                unique_name = str(uuid.uuid4())
+                role = Role(name=unique_name,
+                            description="Base user role",
+                            is_admin=False,
+                            is_superuser=False,
+                            is_subscriber=False,
+                            is_manager=False)
+                self._db.add(role)
+                await self._db.commit()
+                await self._db.refresh(role)
+
+                user.role_id = role.id
+                await self.db_add_user(user)
+            else:
+                user.role_id = role[0].id
+                await self.db_add_user(user)
         except NoResultFound:
-            unique_name = str(uuid.uuid4())
-            role = Role(name=unique_name,
-                        description="Base user role",
-                        is_admin=False,
-                        is_superuser=False,
-                        is_subscriber=False,
-                        is_manager=False)
-            self._db.add(role)
-            await self._db.commit()
-            await self._db.refresh(role)
-        
-        user.role_id = role[0].id
+            NoResultFound("Role not found")
+
+        return user
+
+    async def db_add_user(self, user):
         self._db.add(user)
         await self._db.commit()
         await self._db.refresh(user)
-        
-        return user
 
 
 class LoginService(AbstractService):
@@ -130,7 +137,7 @@ class LogoutService(DeleteAbstractService):
             await self._db.delete(token[0])
             await self._db.commit()
         else:
-            raise Exception('Токен не найден')
+            raise NoResultFound("Token not found")
 
 
 @lru_cache()

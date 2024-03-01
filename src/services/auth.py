@@ -22,34 +22,30 @@ class SignUpService(AbstractService):
 
     async def get_data(self, user_create: UserCreate):
         user = User(**jsonable_encoder(user_create))
+        result = await self._db.execute(select(Role).where(
+            Role.is_admin == False,
+            Role.is_subscriber == False,
+            Role.is_superuser == False,
+            Role.is_manager == False
+        ))
+        role = result.fetchone()
 
-        try:
-            result = await self._db.execute(select(Role).where(
-                Role.is_admin == False,
-                Role.is_subscriber == False,
-                Role.is_superuser == False,
-                Role.is_manager == False
-            ))
-            role = result.fetchone()
+        if role is None:
+            role = Role(name="Base user",
+                        description="Base user role",
+                        is_admin=False,
+                        is_superuser=False,
+                        is_subscriber=False,
+                        is_manager=False)
+            self._db.add(role)
+            await self._db.commit()
+            await self._db.refresh(role)
 
-            if role is None:
-                role = Role(name="Base user",
-                            description="Base user role",
-                            is_admin=False,
-                            is_superuser=False,
-                            is_subscriber=False,
-                            is_manager=False)
-                self._db.add(role)
-                await self._db.commit()
-                await self._db.refresh(role)
-
-                user.role_id = role.id
-                await self.db_add_user(user)
-            else:
-                user.role_id = role[0].id
-                await self.db_add_user(user)
-        except NoResultFound:
-            NoResultFound("Role not found")
+            user.role_id = role.id
+            await self.db_add_user(user)
+        else:
+            user.role_id = role[0].id
+            await self.db_add_user(user)
 
         return user
 

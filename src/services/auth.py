@@ -1,13 +1,13 @@
 from functools import lru_cache
-import uuid
 
 from async_fastapi_jwt_auth import AuthJWT
-from fastapi import Depends, Request
+from fastapi import Depends, Request, HTTPException
 from fastapi.encoders import jsonable_encoder
 from redis.asyncio import Redis
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import NoResultFound
+from starlette import status
 from werkzeug.security import check_password_hash
 
 from db.postgres import get_session
@@ -32,8 +32,7 @@ class SignUpService(AbstractService):
         role = result.fetchone()
 
         if role is None:
-            unique_name = str(uuid.uuid4())
-            role = Role(name=unique_name,
+            role = Role(name="Base user",
                         description="Base user role",
                         is_admin=False,
                         is_superuser=False,
@@ -78,7 +77,8 @@ class LoginService(AbstractService):
         await self.set_refresh_token(user_id=user_found.id, user_agent=user_agent,
                                      refresh_token=refresh_token)
 
-        return UserSuccessLogin(refresh_token=refresh_token, access_token=access_token)
+        if not refresh_token and not access_token:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Login error")
 
     async def get_by_login(self, login: str) -> User | None:
         result = await self._db.execute(

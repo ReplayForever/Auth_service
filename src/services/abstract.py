@@ -13,7 +13,6 @@ class PatchAbstractService(ABC):
     @abstractmethod
     def patch(self, *args, **kwargs):
         ...
-        ...
 
 
 class PostAbstractService(ABC):

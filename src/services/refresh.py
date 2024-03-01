@@ -1,11 +1,11 @@
 from functools import lru_cache
 
-from fastapi import Depends, Request
+from fastapi import Depends, Request, HTTPException
 from async_fastapi_jwt_auth import AuthJWT
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update
+from starlette import status
 
-from models.users import UserSuccessRefreshToken
 from services.abstract import PostAbstractService
 from models.schemas import User, LoginHistory, Token
 from db.postgres import get_session
@@ -61,15 +61,16 @@ class RefreshService(PostAbstractService):
         user_agents = [row[0] for row in user_agents]
         current_user_agent = await self.find_current_user_agent(request)
         if current_user_agent in user_agents:
-            new_access_token = await self._authorize.create_access_token(subject=user_id, user_claims={"role_id": role_id})
+            new_access_token = await self._authorize.create_access_token(subject=user_id,
+                                                                         user_claims={"role_id": role_id})
             new_refresh_token = await self._authorize.create_refresh_token(subject=user_id)
 
             await self._authorize.set_access_cookies(new_access_token)
             await self._authorize.set_refresh_cookies(new_refresh_token)
 
-            await self.update_refresh_token_in_db(user_id, new_refresh_token)
+            if not new_access_token and not new_refresh_token:
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Error during refresh tokens')
 
-            return UserSuccessRefreshToken(access_token=new_access_token, refresh_token=new_refresh_token)
         else:
             raise Exception("Please login again")
 

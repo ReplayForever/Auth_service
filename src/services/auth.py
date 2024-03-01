@@ -162,4 +162,3 @@ def get_logout_service(
         db: AsyncSession = Depends(get_session)
 ) -> LogoutService:
     return LogoutService(authorize, redis_token, db)
-

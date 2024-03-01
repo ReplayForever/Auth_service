@@ -1,6 +1,7 @@
 import datetime
 from functools import lru_cache
 
+
 from async_fastapi_jwt_auth import AuthJWT
 from fastapi import Depends, HTTPException
 from sqlalchemy import select

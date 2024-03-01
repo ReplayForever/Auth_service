@@ -87,3 +87,7 @@ class Paginator(BaseModel, Generic[T]):
     page: int
     limit: int
     results: List[T]
+
+
+class UserMessageOut(BaseModel):
+    message: str = ''

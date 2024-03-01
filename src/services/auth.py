@@ -1,5 +1,4 @@
 from functools import lru_cache
-import uuid
 
 from fastapi import Depends
 from fastapi.encoders import jsonable_encoder
@@ -22,17 +21,18 @@ class SignUpService(AbstractService):
 
         try:
             result = await self._db.execute(select(Role).where(
-    Role.is_admin == False,
+                Role.is_admin == False,
                 Role.is_subscriber == False,
                 Role.is_superuser == False,
                 Role.is_manager == False
             ))
             role = result.fetchone()
             if role is None:
-                raise 'Нет такой роли'
+                raise NoResultFound('Нет такой роли')
+            else:
+                role = role[0]
         except NoResultFound:
-            unique_name = str(uuid.uuid4())
-            role = Role(name=unique_name,
+            role = Role(name="Base user",
                         description="Base user role",
                         is_admin=False,
                         is_superuser=False,
@@ -42,7 +42,7 @@ class SignUpService(AbstractService):
             await self._db.commit()
             await self._db.refresh(role)
         
-        user.role_id = role[0].id 
+        user.role_id = role.id
         self._db.add(user)
         await self._db.commit()
         await self._db.refresh(user)

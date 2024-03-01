@@ -1,13 +1,14 @@
 from functools import lru_cache
 
-from fastapi import Depends
+from fastapi import Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
+from starlette import status
 
 from db.postgres import get_session
 from models.schemas import User, LoginHistory, Token
 from sqlalchemy import select
 from werkzeug.security import check_password_hash
-from models.users import UserLogin, UserSuccessLogin
+from models.users import UserLogin
 from services.abstract import AbstractService
 from async_fastapi_jwt_auth import AuthJWT
 
@@ -33,7 +34,8 @@ class LoginService(AbstractService):
         await self.set_refresh_token(user_id=user_found.id, user_agent=user_agent,
                                      refresh_token=refresh_token)
 
-        return UserSuccessLogin(refresh_token=refresh_token, access_token=access_token)
+        if not refresh_token and not access_token:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Ошибка при логине")
 
     async def get_by_login(self, login: str) -> User | None:
         result = await self._db.execute(

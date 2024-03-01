@@ -69,7 +69,7 @@ class RefreshService(PostAbstractService):
             await self._authorize.set_refresh_cookies(new_refresh_token)
 
             if not new_access_token and not new_refresh_token:
-                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Ошибка при обновлении токенов')
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Error during refresh tokens')
 
         else:
             raise Exception("Please login again")

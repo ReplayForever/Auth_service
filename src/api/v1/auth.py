@@ -1,17 +1,11 @@
-from fastapi import APIRouter,Depends, HTTPException, status, Header, Request
+from fastapi import APIRouter, Depends, HTTPException, status, Header, Request
 from starlette.responses import Response
 
-from models.users import UserLogin, UserSuccessLogin, UserCreate
 from services.auth import (get_sign_up_service, SignUpService, LoginService, get_login_service, LogoutService,
                            get_logout_service)
-from models.users import UserLogin, UserSuccessLogin, UserCreate, UserSuccessRefreshToken, UserMessageOut
-from services.auth import get_sign_up_service, SignUpService
-from services.login import LoginService, get_login_service
-from services.logout import LogoutService, get_logout_service
+from models.users import UserLogin, UserCreate, UserMessageOut
 from services.refresh import RefreshService, get_refresh_service
 
-# from services.logout import LogoutService, get_logout_service
-# from services.refresh import RefreshService, get_refresh_service
 
 router = APIRouter()
 
@@ -24,7 +18,7 @@ async def signup(user_create: UserCreate, user_register: SignUpService = Depends
     if user:
         return Response(status_code=status.HTTP_201_CREATED)
     else:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Ошибка при регистрации пользователя")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Registration error")
 
 
 @router.post('/login/',
@@ -35,7 +29,7 @@ async def login(user_auth: UserLogin,
                 user_login: LoginService = Depends(get_login_service),
                 user_agent: str = Header("")) -> UserMessageOut:
     await user_login.get_data(user_auth, user_agent)
-    return UserMessageOut(message="Успешный вход в систему")
+    return UserMessageOut(message="Login success")
 
 
 @router.delete('/logout/',
@@ -46,7 +40,7 @@ async def logout(request: Request,
                  full_logout: bool = False,
                  user_logout: LogoutService = Depends(get_logout_service)) -> UserMessageOut:
     await user_logout.delete(request)
-    return UserMessageOut(message="Успешный выход из системы")
+    return UserMessageOut(message="Logout success")
 
 
 @router.post('/refresh/',
@@ -56,4 +50,4 @@ async def logout(request: Request,
 async def token_refresh(request: Request,
                         user_token_refresh: RefreshService = Depends(get_refresh_service)) -> UserMessageOut:
     await user_token_refresh.post(request)
-    return UserMessageOut(message="Успешное обновление токенов")
+    return UserMessageOut(message="Refresh success")

@@ -25,7 +25,7 @@ async def user_profile(user_info: ProfileInfoService = Depends(get_profile_info_
         return answer
     else:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
-                            detail='Ошибка при получении информации о пользователе')
+                            detail='Error while retrieving user information')
 
 
 @router.patch('/profile/',
@@ -44,7 +44,7 @@ async def change_profile(
         return answer
     else:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
-                            detail='Ошибка при получении информации о пользователе')
+                            detail='Error while retrieving user information')
 
 
 @router.get('/profile/history',

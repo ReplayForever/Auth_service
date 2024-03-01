@@ -3,12 +3,11 @@ from functools import lru_cache
 from fastapi import Depends, Request, HTTPException
 from async_fastapi_jwt_auth import AuthJWT
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, update
 from starlette import status
 
-from models.users import UserSuccessRefreshToken
 from services.abstract import PostAbstractService
-from models.schemas import User, LoginHistory
+from models.schemas import User, LoginHistory, Token
 from db.postgres import get_session
 
 
@@ -24,7 +23,7 @@ class RefreshService(PostAbstractService):
             user = user_row[0]
             role_id = user.role_id
         else:
-            raise Exception("Пройдите повторый логин")
+            raise Exception("Please login again")
         return role_id
 
     async def find_user_agents(self, user_id: str):
@@ -35,7 +34,7 @@ class RefreshService(PostAbstractService):
             for row in history_rows:
                 user_agents.append(row)
         else:
-            raise "User-Agent не найден"
+            raise "User-Agent not found"
         return user_agents
 
     @staticmethod
@@ -43,8 +42,16 @@ class RefreshService(PostAbstractService):
         current_user_agent = request.headers.get("User-Agent")
         return current_user_agent
 
+    async def update_refresh_token_in_db(self, user_id: str, new_refresh_token: str):
+        await self._db.execute(
+            update(Token).where(
+                Token.user_id == user_id
+            ).values(refresh_token=new_refresh_token)
+        )
+        await self._db.commit()
+
     async def post(self, request: Request):
-        await self._authorize.jwt_refresh_token_required()
+        await self._authorize.jwt_required()
 
         user_id = await self._authorize.get_jwt_subject()
         role_id = await self.find_user_role_id(user_id)
@@ -65,7 +72,7 @@ class RefreshService(PostAbstractService):
                 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Ошибка при обновлении токенов')
 
         else:
-            raise Exception("Пожалуйста, пройдите повторный логин в систему")
+            raise Exception("Please login again")
 
 
 @lru_cache()

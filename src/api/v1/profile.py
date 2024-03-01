@@ -1,32 +1,29 @@
-# from typing import Annotated
-#
-# from fastapi import APIRouter, Cookie, Depends, HTTPException, Query
-# from starlette import status
-# from starlette.responses import Response
-#
-# from models.users import ChangeUserProfile, UserProfileResult, UserProfileHistory, UserChangePassword, UserError, \
-#     Paginator
-# # from services.profile import ProfileInfoService, get_profile_info_service, patch_profile_info_service, \
-# #     ProfileUpdateInfoService, UpdatePasswordService, update_password_service, ProfileHistoryService, \
-# #     get_profile_history_service
-#
-# router = APIRouter()
-#
-#
-# @router.get('/profile/',
-#             description='Информация о пользователе',
-#             response_model=UserProfileResult,
-#             responses={status.HTTP_401_UNAUTHORIZED: {'model': UserError},
-#                        status.HTTP_404_NOT_FOUND: {'model': UserError},
-#                        status.HTTP_503_SERVICE_UNAVAILABLE: {'model': UserError}})
-# async def user_profile(access_token: Annotated[str | None, Cookie()] = None,
-#                        user_info: ProfileInfoService = Depends(get_profile_info_service)) -> UserProfileResult:
-#     answer = await user_info.get_data(access_token)
-#     if answer:
-#         return answer
-#     else:
-#         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
-#                             detail='Ошибка при получении информации о пользователе')
+from typing import Annotated
+
+from fastapi import APIRouter, Cookie, Depends, HTTPException, Query
+from starlette import status
+from starlette.responses import Response
+
+from models.users import ChangeUserProfile, UserProfileResult, UserProfileHistory, UserChangePassword, UserError, \
+    Paginator
+from services.profile import ProfileInfoService, get_profile_info_service
+
+router = APIRouter()
+
+
+@router.get('/profile/',
+            description='Информация о пользователе',
+            response_model=UserProfileResult,
+            responses={status.HTTP_401_UNAUTHORIZED: {'model': UserError},
+                       status.HTTP_404_NOT_FOUND: {'model': UserError},
+                       status.HTTP_503_SERVICE_UNAVAILABLE: {'model': UserError}})
+async def user_profile(user_info: ProfileInfoService = Depends(get_profile_info_service)) -> UserProfileResult:
+    answer = await user_info.get_data()
+    if answer:
+        return answer
+    else:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                            detail='Ошибка при получении информации о пользователе')
 #
 #
 # @router.patch('/profile/',

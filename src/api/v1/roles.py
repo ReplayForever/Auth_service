@@ -25,7 +25,7 @@ async def get_roles(
         return answer
     else:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
-                            detail="Ошибка при получении списка ролей")
+                            detail="Error getting role list")
 
 
 @router.post("/roles/",

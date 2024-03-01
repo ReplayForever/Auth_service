@@ -78,7 +78,7 @@ class LoginService(AbstractService):
                                      refresh_token=refresh_token)
 
         if not refresh_token and not access_token:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Ошибка при логине")
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Login error")
 
     async def get_by_login(self, login: str) -> User | None:
         result = await self._db.execute(

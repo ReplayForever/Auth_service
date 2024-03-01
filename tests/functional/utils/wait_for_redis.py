@@ -2,7 +2,7 @@ import time
 
 from redis import Redis
 
-from utils_config import settings
+from settings import settings
 
 
 if __name__ == '__main__':

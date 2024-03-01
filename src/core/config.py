@@ -3,7 +3,7 @@ import logging
 from pathlib import Path
 
 from dotenv import load_dotenv
-from pydantic import Field
+from pydantic import Field, BaseModel
 from pydantic_settings import BaseSettings
 from async_fastapi_jwt_auth import AuthJWT
 
@@ -44,10 +44,8 @@ class Settings(BaseSettings):
 settings = Settings()
 
 
-class JWTSettings(BaseSettings):
-    authjwt_secret_key: str = Field(validation_alias='JWT_SECRET')
-
-
-@AuthJWT.load_config
-def get_config():
-    return JWTSettings()
+class JWTSettings(BaseModel):
+    authjwt_secret_key: str = "secret"
+    authjwt_token_location: set = {"cookies"}
+    authjwt_cookie_secure: bool = False
+    authjwt_cookie_csrf_protect: bool = False

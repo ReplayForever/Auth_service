@@ -35,3 +35,10 @@ class DeleteAbstractService(ABC):
     @abstractmethod
     def delete(self, *args, **kwargs):
         ...
+
+
+class AbstractStorage(ABC):
+
+    @abstractmethod
+    def set_data(self, *args, **kwargs):
+        ...

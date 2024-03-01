@@ -28,6 +28,8 @@ class SignUpService(AbstractService):
                 Role.is_manager == False
             ))
             role = result.fetchone()
+            if role is None:
+                raise NoResultFound('')
         except NoResultFound:
             unique_name = str(uuid.uuid4())
             role = Role(name = unique_name, 

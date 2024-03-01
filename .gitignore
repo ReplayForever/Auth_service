@@ -4,3 +4,4 @@ venv
 .data
 dump.sql
 __pycache__
+.pytest_cache

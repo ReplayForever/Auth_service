@@ -1,9 +1,11 @@
 import uuid
 from datetime import datetime
 
+from fastapi import HTTPException
 from sqlalchemy import Boolean, Column, DateTime, String, Integer, ForeignKey, Date
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
+from starlette import status
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from python_usernames import is_safe_username
@@ -39,16 +41,16 @@ class User(Base):
 
     def __init__(self, username: str, login: str, password: str, birth_day: str | None, email: str, *args, **kwargs):
         if not validate_password(password):
-            raise ValueError('Invalid password')
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Invalid password')
 
         if not validate_login(login):
-            raise ValueError('Invalid login')
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Invalid login')
 
         if not validate_email(email):
-            raise ValueError('Invalid email address')
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Invalid email address')
 
         if not is_safe_username(username):
-            raise ValueError('Username not availible')
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Invalid username')
 
         self.username = username
         self.login = login

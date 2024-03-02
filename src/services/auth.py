@@ -6,7 +6,7 @@ from fastapi.encoders import jsonable_encoder
 from redis.asyncio import Redis
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.exc import NoResultFound
+from sqlalchemy.exc import NoResultFound, IntegrityError
 from starlette import status
 from werkzeug.security import check_password_hash
 
@@ -22,33 +22,42 @@ class SignUpService(AbstractService):
         self._db = db
 
     async def get_data(self, user_create: UserCreate):
-        user = User(**jsonable_encoder(user_create))
-        result = await self._db.execute(select(Role).where(
-            Role.is_admin == False,
-            Role.is_subscriber == False,
-            Role.is_superuser == False,
-            Role.is_manager == False
-        ))
-        role = result.fetchone()
+        try:
+            user = User(**jsonable_encoder(user_create))
+            result = await self._db.execute(select(Role).where(
+                Role.is_admin == False,
+                Role.is_subscriber == False,
+                Role.is_superuser == False,
+                Role.is_manager == False
+            ))
+            role = result.fetchone()
 
-        if role is None:
-            role = Role(name="Base user",
-                        description="Base user role",
-                        is_admin=False,
-                        is_superuser=False,
-                        is_subscriber=False,
-                        is_manager=False)
-            self._db.add(role)
-            await self._db.commit()
-            await self._db.refresh(role)
+            if role is None:
+                role = Role(name="Base user",
+                            description="Base user role",
+                            is_admin=False,
+                            is_superuser=False,
+                            is_subscriber=False,
+                            is_manager=False)
+                self._db.add(role)
+                await self._db.commit()
+                await self._db.refresh(role)
 
-            user.role_id = role.id
-            await self.db_add_user(user)
-        else:
-            user.role_id = role[0].id
-            await self.db_add_user(user)
+                user.role_id = role.id
+                await self.db_add_user(user)
+            else:
+                user.role_id = role[0].id
+                await self.db_add_user(user)
 
-        return user
+            return user
+        except IntegrityError as e:
+            error_message = str(e)
+            if 'Key (email)=' in error_message:
+                raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail='Email already exists')
+            elif 'Key (username)=' in error_message:
+                raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail='Username already exists')
+            elif 'Key (login)=' in error_message:
+                raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail='Login already exists')
 
     async def db_add_user(self, user):
         self._db.add(user)

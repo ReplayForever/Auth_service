@@ -4,24 +4,29 @@ from functools import lru_cache
 
 from async_fastapi_jwt_auth import AuthJWT
 from fastapi import Depends, HTTPException
+from redis.asyncio import Redis
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette import status
 from werkzeug.security import generate_password_hash
 
 from db.postgres import get_session
+from db.redis import get_redis
 from models.schemas import User, LoginHistory
 from models.users import UserProfileResult, UserChangePassword, ChangeUserProfile, UserProfileHistory, Paginator
 from services.abstract import AbstractService, PatchAbstractService
+from services.common.access_check_common import AccessCheckCommon
 from utils.validators import validate_password
 
 
-class ProfileInfoService(AbstractService):
-    def __init__(self, db: AsyncSession, authorize: AuthJWT):
+class ProfileInfoService(AbstractService, AccessCheckCommon):
+    def __init__(self, db: AsyncSession, authorize: AuthJWT, redis_token: Redis):
         self._db = db
         self._authorize = authorize
+        self._redis_token = redis_token
 
     async def get_data(self) -> UserProfileResult:
+        await self.check_access()
         await self._authorize.jwt_required()
 
         user_id = await self._authorize.get_jwt_subject()
@@ -29,12 +34,14 @@ class ProfileInfoService(AbstractService):
         return UserProfileResult(**user.__dict__)
 
 
-class ProfileHistoryService(AbstractService):
-    def __init__(self, db: AsyncSession, authorize: AuthJWT):
+class ProfileHistoryService(AbstractService, AccessCheckCommon):
+    def __init__(self, db: AsyncSession, authorize: AuthJWT, redis_token: Redis):
         self._db = db
         self._authorize = authorize
+        self._redis_token = redis_token
 
     async def get_data(self, page, limit) -> Paginator:
+        await self.check_access()
         await self._authorize.jwt_required()
 
         user_id = await self._authorize.get_jwt_subject()
@@ -57,12 +64,14 @@ class ProfileHistoryService(AbstractService):
         return Paginator(page=page, limit=limit, results=history_list)
 
 
-class ProfileUpdateInfoService(PatchAbstractService):
-    def __init__(self, db: AsyncSession, authorize: AuthJWT):
+class ProfileUpdateInfoService(PatchAbstractService, AccessCheckCommon):
+    def __init__(self, db: AsyncSession, authorize: AuthJWT, redis_token: Redis):
         self._db = db
         self._authorize = authorize
+        self._redis_token = redis_token
 
     async def patch(self, user_info: ChangeUserProfile) -> UserProfileResult:
+        await self.check_access()
         await self._authorize.jwt_required()
 
         user_id = await self._authorize.get_jwt_subject()
@@ -79,12 +88,14 @@ class ProfileUpdateInfoService(PatchAbstractService):
         return UserProfileResult(**user.__dict__)
 
 
-class UpdatePasswordService(PatchAbstractService):
-    def __init__(self, db: AsyncSession, authorize: AuthJWT):
+class UpdatePasswordService(PatchAbstractService, AccessCheckCommon):
+    def __init__(self, db: AsyncSession, authorize: AuthJWT, redis_token: Redis):
         self._db = db
         self._authorize = authorize
+        self._redis_token = redis_token
 
     async def patch(self, passwords: UserChangePassword) -> None:
+        await self.check_access()
         await self._authorize.jwt_required()
 
         user_id = await self._authorize.get_jwt_subject()
@@ -106,29 +117,33 @@ class UpdatePasswordService(PatchAbstractService):
 def get_profile_info_service(
         db: AsyncSession = Depends(get_session),
         authorize: AuthJWT = Depends(),
+        redis_token: Redis = Depends(get_redis),
 ) -> ProfileInfoService:
-    return ProfileInfoService(db, authorize)
+    return ProfileInfoService(db, authorize, redis_token)
 
 
 @lru_cache()
 def get_profile_history_service(
         db: AsyncSession = Depends(get_session),
         authorize: AuthJWT = Depends(),
+        redis_token: Redis = Depends(get_redis),
 ) -> ProfileHistoryService:
-    return ProfileHistoryService(db, authorize)
+    return ProfileHistoryService(db, authorize, redis_token)
 
 
 @lru_cache()
 def patch_profile_info_service(
         db: AsyncSession = Depends(get_session),
         authorize: AuthJWT = Depends(),
+        redis_token: Redis = Depends(get_redis),
 ) -> ProfileUpdateInfoService:
-    return ProfileUpdateInfoService(db, authorize)
+    return ProfileUpdateInfoService(db, authorize, redis_token)
 
 
 @lru_cache()
 def update_password_service(
         db: AsyncSession = Depends(get_session),
         authorize: AuthJWT = Depends(),
+        redis_token: Redis = Depends(get_redis),
 ) -> UpdatePasswordService:
-    return UpdatePasswordService(db, authorize)
+    return UpdatePasswordService(db, authorize, redis_token)

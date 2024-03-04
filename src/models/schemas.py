@@ -36,7 +36,10 @@ class User(Base):
     role_id = Column(Integer, ForeignKey('roles.id'))
     role = relationship('Role', back_populates='user')
     token = relationship('Token', back_populates='user')
-    login_history = relationship('LoginHistory', back_populates='user')
+    login_history = relationship('LoginHistory',
+                                 back_populates='user',
+                                 cascade='all, delete',
+                                 passive_deletes=True)
     is_active = Column(Boolean, default=False)
 
     def __init__(self, username: str, login: str, password: str, birth_day: str | None, email: str, *args, **kwargs):
@@ -103,5 +106,5 @@ class LoginHistory(Base):
     auth_date = Column(DateTime, default=datetime.utcnow)
     created_at = Column(DateTime, default=datetime.utcnow)
     modified_at = Column(DateTime, default=datetime.utcnow)
-    user_id = Column(ForeignKey('users.id'))
+    user_id = Column(ForeignKey('users.id', ondelete='CASCADE'))
     user = relationship('User', back_populates='login_history')

@@ -64,7 +64,7 @@ class RefreshService(PostAbstractService):
         refresh_jti = await self._authorize.get_jti(refresh_token)
 
         if await self._redis_token.exists(access_jti) or await self._redis_token.exists(refresh_jti):
-                raise HTTPException(status_code=403, detail="Access and refresh tokens are invalid")
+            raise HTTPException(status_code=HTTPStatus.FORBIDDEN, detail="Access and refresh tokens are invalid")
         
         user_id = await self._authorize.get_jwt_subject()
         role_id = await self.find_user_role_id(user_id)

@@ -1,3 +1,5 @@
+from http import HTTPStatus
+
 from fastapi import HTTPException
 from redis.exceptions import ResponseError
 
@@ -12,6 +14,6 @@ class AccessCheckCommon:
         access_jti = (raw_token)["jti"]
         try:
             if await self._redis_token.exists(access_jti):
-                raise HTTPException(status_code=403, detail="Access token is invalid or expired")
+                raise HTTPException(status_code=HTTPStatus.FORBIDDEN, detail="Access token is invalid or expired")
         except ResponseError:
-            raise HTTPException(status_code=500, detail="Error connecting to Redis")
+            raise HTTPException(status_code=HTTPStatus.INTERNAL_SERVER_ERROR, detail="Error connecting to Redis")

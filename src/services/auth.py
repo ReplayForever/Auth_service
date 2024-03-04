@@ -137,7 +137,7 @@ class LogoutService(DeleteAbstractService, AccessCheckCommon):
         access_jti = await self._authorize.get_jti(access_token)
 
         if await self._redis_token.exists(access_jti) or await self._redis_token.exists(refresh_jti):
-            raise HTTPException(status_code=403, detail="Access and refresh tokens are invalid")
+            raise HTTPException(status_code=HTTPStatus.FORBIDDEN, detail="Access and refresh tokens are invalid")
 
         await self._authorize.unset_jwt_cookies()
 

@@ -28,10 +28,11 @@ async def create_superuser_async(username: str, login: str,
             user = User(username=username, login=login, password=password,
                         email=email, birth_day=None)
             result = await db.execute(select(Role).where(
-                                      Role.is_admin == False,
-                                      Role.is_subscriber == False,
-                                      Role.is_superuser == True,
-                                      Role.is_manager == False))
+                Role.is_admin == False,
+                Role.is_subscriber == False,
+                Role.is_superuser == True,
+                Role.is_manager == False
+            ))
             role = result.fetchone()
 
             if role is None:

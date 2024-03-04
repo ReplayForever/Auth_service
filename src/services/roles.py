@@ -68,7 +68,7 @@ class RoleDeleteService(DeleteAbstractService, RolesCommon, AccessCheckCommon):
         role = await self._db.get(Role, role_id)
 
         if not role:
-            raise HTTPException(status_code=404, detail="Role not found")
+            raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail="Role not found")
 
         await self._db.delete(role)
         await self._db.commit()
@@ -86,7 +86,7 @@ class RoleUpdateService(PatchAbstractService, RolesCommon, AccessCheckCommon):
 
         role = await self._db.get(Role, role_id)
         if not role:
-            raise HTTPException(status_code=404, detail="Role not found")
+            raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail="Role not found")
 
         for field, value in role_update.dict(exclude_unset=True).items():
             setattr(role, field, value)

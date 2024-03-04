@@ -101,9 +101,9 @@ class UpdatePasswordService(PatchAbstractService, AccessCheckCommon):
         user = await self._db.get(User, user_id)
 
         if not user.check_password(passwords.password):
-            raise HTTPException(status_code=400, detail='Wrong password')
+            raise HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail='Wrong password')
         elif not validate_password(passwords.new_password):
-            raise HTTPException(status_code=400, detail='Password too simple')
+            raise HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail='Password too simple')
 
         user.password = generate_password_hash(passwords.new_password)
         user.modified_at = datetime.datetime.now()

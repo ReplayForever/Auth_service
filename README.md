@@ -63,3 +63,9 @@ docker compose up docker-compose.dev.yml auth_tests
 ## OpenAPI
 Для проверки работоспособности проекта используется Swagger. 
 Запускаем проект и по `http://localhost/api/openapi` переходим на Swagger. Здесь можно проверить работу ендпоинтов
+
+## Console command
+Для создания суперюзера необходимо из директории /src в консоли прописать 
+```shell
+python3 cli.py username login password email
+```

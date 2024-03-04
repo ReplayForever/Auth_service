@@ -1,12 +1,12 @@
 import time
 from functools import lru_cache
+from http import HTTPStatus
 
 from fastapi import Depends, Request, HTTPException
 from async_fastapi_jwt_auth import AuthJWT
 from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update
-from starlette import status
 
 from services.abstract import PostAbstractService
 from models.schemas import User, LoginHistory, Token
@@ -64,7 +64,7 @@ class RefreshService(PostAbstractService):
         refresh_jti = await self._authorize.get_jti(refresh_token)
 
         if await self._redis_token.exists(access_jti) or await self._redis_token.exists(refresh_jti):
-                raise HTTPException(status_code=403, detail="Access and refresh tokens are invalid")
+            raise HTTPException(status_code=HTTPStatus.FORBIDDEN, detail="Access and refresh tokens are invalid")
         
         user_id = await self._authorize.get_jwt_subject()
         role_id = await self.find_user_role_id(user_id)
@@ -93,7 +93,7 @@ class RefreshService(PostAbstractService):
             await self.update_refresh_token_in_db(refresh_token=refresh_token, new_refresh_token=new_refresh_token)
 
             if not new_access_token and not new_refresh_token:
-                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Error during refresh tokens')
+                raise HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail='Error during refresh tokens')
 
         else:
             raise Exception("Please login again")

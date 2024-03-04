@@ -1,3 +1,5 @@
+from http import HTTPStatus
+
 from fastapi import HTTPException
 
 from models.schemas import Role
@@ -14,4 +16,5 @@ class RolesCommon:
 
         role = await self._db.get(Role, role_id)
         if not (role.is_admin or role.is_manager or role.is_superuser):
-            raise HTTPException(status_code=403, detail="Only admins, moderators, and superusers can get all roles")
+            raise HTTPException(status_code=HTTPStatus.FORBIDDEN,
+                                detail="Only admins, moderators, and superusers can get all roles")

@@ -1,11 +1,11 @@
 import datetime
 from functools import lru_cache
+from http import HTTPStatus
 
 from async_fastapi_jwt_auth import AuthJWT
 from redis.asyncio import Redis
 from fastapi import Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
-from starlette import status
 from starlette.requests import Request
 
 from db.postgres import get_session
@@ -30,10 +30,10 @@ class UpdateUserRoleService(PostAbstractService, RolesCommon, AccessCheckCommon)
 
         role = await self._db.get(Role, role_assign.role_id)
         if not role:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Role not found")
+            raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail="Role not found")
         user = await self._db.get(User, role_assign.user_id)
         if not user:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+            raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail="User not found")
 
         user.role_id = role_assign.role_id
         user.modified_at = datetime.datetime.now()
@@ -55,7 +55,7 @@ class GetUserRoleService(AbstractService, RolesCommon, AccessCheckCommon):
 
         user = await self._db.get(User, user_id)
         if not user:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+            raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail="User not found")
 
         role = await self._db.get(Role, user.role_id)
 

@@ -1,13 +1,12 @@
 import datetime
 from functools import lru_cache
-
+from http import HTTPStatus
 
 from async_fastapi_jwt_auth import AuthJWT
 from fastapi import Depends, HTTPException
 from redis.asyncio import Redis
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from starlette import status
 from werkzeug.security import generate_password_hash
 
 from db.postgres import get_session
@@ -57,9 +56,9 @@ class ProfileHistoryService(AbstractService, AccessCheckCommon):
             history_list.append(UserProfileHistory(**login_history[0].__dict__))
 
         if not history_list and page > 1:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Page not found')
+            raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='Page not found')
         elif not history_list:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='History not found')
+            raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='History not found')
 
         return Paginator(page=page, limit=limit, results=history_list)
 

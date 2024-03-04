@@ -1,5 +1,6 @@
+from http import HTTPStatus
+
 from fastapi import APIRouter, Depends, HTTPException
-from starlette import status
 from starlette.requests import Request
 
 from models.roles import CreateRole, RoleDelete, RoleChangePermission, RoleError, RoleToRepresentation
@@ -14,8 +15,8 @@ router = APIRouter()
 @router.get('/roles/',
             description="Получение списка ролей",
             response_model=list[RoleToRepresentation],
-            responses={status.HTTP_400_BAD_REQUEST: {"model": RoleError},
-                        status.HTTP_403_FORBIDDEN: {"model": RoleError}})
+            responses={HTTPStatus.BAD_REQUEST: {"model": RoleError},
+                       HTTPStatus.FORBIDDEN: {"model": RoleError}})
 async def get_roles(
         request: Request,
         role_service: RoleGetService = Depends(get_role_get_service)
@@ -24,15 +25,15 @@ async def get_roles(
     if answer:
         return answer
     else:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+        raise HTTPException(status_code=HTTPStatus.BAD_REQUEST,
                             detail="Error getting role list")
 
 
 @router.post("/roles/",
              description="Создание роли",
              response_model=RoleToRepresentation,
-             responses={status.HTTP_400_BAD_REQUEST: {"model": RoleError},
-                        status.HTTP_403_FORBIDDEN: {"model": RoleError}})
+             responses={HTTPStatus.BAD_REQUEST: {"model": RoleError},
+                        HTTPStatus.FORBIDDEN: {"model": RoleError}})
 async def create_role(request: Request,
                       role: CreateRole,
                       role_service: RoleCreateService = Depends(get_role_create_service)) -> RoleToRepresentation:
@@ -43,9 +44,9 @@ async def create_role(request: Request,
 @router.delete("/roles/",
                description="Удаление роли",
                response_model=UserMessageOut,
-               responses={status.HTTP_400_BAD_REQUEST: {"model": RoleError},
-                          status.HTTP_403_FORBIDDEN: {"model": RoleError},
-                          status.HTTP_404_NOT_FOUND: {"model": RoleError}})
+               responses={HTTPStatus.BAD_REQUEST: {"model": RoleError},
+                          HTTPStatus.FORBIDDEN: {"model": RoleError},
+                          HTTPStatus.NOT_FOUND: {"model": RoleError}})
 async def delete_role(role: RoleDelete,
                       request: Request,
                       role_service: RoleDeleteService = Depends(get_role_delete_service)) -> UserMessageOut:
@@ -56,9 +57,9 @@ async def delete_role(role: RoleDelete,
 @router.patch("/roles/",
               description="Изменение прав роли",
               response_model=RoleToRepresentation,
-              responses={status.HTTP_400_BAD_REQUEST: {"model": RoleError},
-                         status.HTTP_403_FORBIDDEN: {"model": RoleError},
-                         status.HTTP_404_NOT_FOUND: {"model": RoleError}})
+              responses={HTTPStatus.BAD_REQUEST: {"model": RoleError},
+                         HTTPStatus.FORBIDDEN: {"model": RoleError},
+                         HTTPStatus.NOT_FOUND: {"model": RoleError}})
 async def update_role(role: RoleChangePermission,
                       request: Request,
                       role_service: RoleUpdateService = Depends(get_role_update_service)) -> RoleToRepresentation:

@@ -1,5 +1,6 @@
 import datetime
 from functools import lru_cache
+from http import HTTPStatus
 
 from async_fastapi_jwt_auth import AuthJWT
 from redis.asyncio import Redis
@@ -7,7 +8,6 @@ from fastapi import Depends, HTTPException
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from starlette import status
 from starlette.requests import Request
 
 from db.postgres import get_session
@@ -49,7 +49,7 @@ class RoleCreateService(CreateAbstractService, RolesCommon, AccessCheckCommon):
         try:
             await self._db.commit()
         except IntegrityError:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+            raise HTTPException(status_code=HTTPStatus.BAD_REQUEST,
                                 detail="Role with name '%s' already exists" % new_role.name)
         await self._db.refresh(new_role)
         return RoleToRepresentation(**new_role.__dict__)

@@ -1,5 +1,6 @@
 import time
 from functools import lru_cache
+from http import HTTPStatus
 
 from async_fastapi_jwt_auth import AuthJWT
 from fastapi import Depends, Request, HTTPException
@@ -8,7 +9,6 @@ from redis.asyncio import Redis
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import NoResultFound, IntegrityError
-from starlette import status
 from werkzeug.security import check_password_hash
 
 from db.postgres import get_session
@@ -55,11 +55,11 @@ class SignUpService(AbstractService):
         except IntegrityError as e:
             error_message = str(e)
             if 'Key (email)=' in error_message:
-                raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail='Email already exists')
+                raise HTTPException(status_code=HTTPStatus.CONFLICT, detail='Email already exists')
             elif 'Key (username)=' in error_message:
-                raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail='Username already exists')
+                raise HTTPException(status_code=HTTPStatus.CONFLICT, detail='Username already exists')
             elif 'Key (login)=' in error_message:
-                raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail='Login already exists')
+                raise HTTPException(status_code=HTTPStatus.CONFLICT, detail='Login already exists')
 
     async def db_add_user(self, user):
         self._db.add(user)
@@ -75,7 +75,7 @@ class LoginService(AbstractService):
     async def get_data(self, user: UserLogin, user_agent: str):
         user_found = await self.get_by_login(user.login)
         if not user_found:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="User not found")
+            raise HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail="User not found")
         await self.check_password(user)
         refresh_token = await self._authorize.create_refresh_token(subject=str(user_found.id))
         access_token = await self._authorize.create_access_token(subject=str(user_found.id),
@@ -89,7 +89,7 @@ class LoginService(AbstractService):
                                      refresh_token=refresh_token)
 
         if not refresh_token and not access_token:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Login error")
+            raise HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail="Login error")
 
     async def get_by_login(self, login: str) -> User | None:
         result = await self._db.execute(

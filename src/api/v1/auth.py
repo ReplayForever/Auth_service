@@ -1,4 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Header, Request
+from http import HTTPStatus
+
+from fastapi import APIRouter, Depends, HTTPException, Header, Request
 from starlette.responses import Response
 
 from services.auth import (get_sign_up_service, SignUpService, LoginService, get_login_service, LogoutService,
@@ -12,18 +14,18 @@ router = APIRouter()
 
 @router.post('/signup/',
              description="Регистрация пользователя",
-             status_code=status.HTTP_201_CREATED)
+             status_code=HTTPStatus.CREATED)
 async def signup(user_create: UserCreate, user_register: SignUpService = Depends(get_sign_up_service)) -> Response:
     user = await user_register.get_data(user_create)
     if user:
-        return Response(status_code=status.HTTP_201_CREATED)
+        return Response(status_code=HTTPStatus.CREATED)
     else:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Registration error")
+        raise HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail="Registration error")
 
 
 @router.post('/login/',
              description="Аутентификация пользователя",
-             status_code=status.HTTP_201_CREATED,
+             status_code=HTTPStatus.CREATED,
              response_model=UserMessageOut)
 async def login(user_auth: UserLogin,
                 user_login: LoginService = Depends(get_login_service),
@@ -34,7 +36,7 @@ async def login(user_auth: UserLogin,
 
 @router.delete('/logout/',
                description="Выход пользователя из сессии",
-               status_code=status.HTTP_200_OK,
+               status_code=HTTPStatus.OK,
                response_model=UserMessageOut)
 async def logout(request: Request,
                  full_logout: bool = False,
@@ -45,7 +47,7 @@ async def logout(request: Request,
 
 @router.post('/refresh/',
              description="Обновление токенов",
-             status_code=status.HTTP_201_CREATED,
+             status_code=HTTPStatus.CREATED,
              response_model=UserMessageOut)
 async def token_refresh(request: Request,
                         user_token_refresh: RefreshService = Depends(get_refresh_service)) -> UserMessageOut:

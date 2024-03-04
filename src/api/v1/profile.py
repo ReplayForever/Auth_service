@@ -1,7 +1,7 @@
 from typing import Annotated
+from http import HTTPStatus
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from starlette import status
 from starlette.responses import Response
 
 from models.users import ChangeUserProfile, UserProfileResult, UserProfileHistory, UserChangePassword, UserError, \
@@ -16,25 +16,25 @@ router = APIRouter()
 @router.get('/profile/',
             description='Информация о пользователе',
             response_model=UserProfileResult,
-            responses={status.HTTP_401_UNAUTHORIZED: {'model': UserError},
-                       status.HTTP_404_NOT_FOUND: {'model': UserError},
-                       status.HTTP_503_SERVICE_UNAVAILABLE: {'model': UserError}})
+            responses={HTTPStatus.UNAUTHORIZED: {'model': UserError},
+                       HTTPStatus.NOT_FOUND: {'model': UserError},
+                       HTTPStatus.SERVICE_UNAVAILABLE: {'model': UserError}})
 async def user_profile(user_info: ProfileInfoService = Depends(get_profile_info_service)) -> UserProfileResult:
     answer = await user_info.get_data()
     if answer:
         return answer
     else:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+        raise HTTPException(status_code=HTTPStatus.BAD_REQUEST,
                             detail='Error while retrieving user information')
 
 
 @router.patch('/profile/',
               description='Изменение информации о пользователе',
-              status_code=status.HTTP_201_CREATED,
+              status_code=HTTPStatus.CREATED,
               response_model=UserProfileResult,
-              responses={status.HTTP_401_UNAUTHORIZED: {'model': UserError},
-                         status.HTTP_404_NOT_FOUND: {'model': UserError},
-                         status.HTTP_503_SERVICE_UNAVAILABLE: {'model': UserError}})
+              responses={HTTPStatus.UNAUTHORIZED: {'model': UserError},
+                         HTTPStatus.NOT_FOUND: {'model': UserError},
+                         HTTPStatus.SERVICE_UNAVAILABLE: {'model': UserError}})
 async def change_profile(
         user_info: ChangeUserProfile,
         patch_user: ProfileUpdateInfoService = Depends(patch_profile_info_service)
@@ -43,16 +43,16 @@ async def change_profile(
     if answer:
         return answer
     else:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+        raise HTTPException(status_code=HTTPStatus.BAD_REQUEST,
                             detail='Error while retrieving user information')
 
 
 @router.get('/profile/history',
             description='История входов пользователя',
-            responses={status.HTTP_400_BAD_REQUEST: {'model': UserError},
-                       status.HTTP_401_UNAUTHORIZED: {'model': UserError},
-                       status.HTTP_404_NOT_FOUND: {'model': UserError},
-                       status.HTTP_503_SERVICE_UNAVAILABLE: {'model': UserError}})
+            responses={HTTPStatus.BAD_REQUEST: {'model': UserError},
+                       HTTPStatus.UNAUTHORIZED: {'model': UserError},
+                       HTTPStatus.NOT_FOUND: {'model': UserError},
+                       HTTPStatus.SERVICE_UNAVAILABLE: {'model': UserError}})
 async def profile_history(page: Annotated[int, Query(ge=1,
                                           description='Pagination page number')] = 1,
                           limit: Annotated[int, Query(ge=1,
@@ -66,13 +66,13 @@ async def profile_history(page: Annotated[int, Query(ge=1,
 
 @router.patch('/profile/change_password/',
               description='Изменение пароля пользователя',
-              status_code=status.HTTP_201_CREATED,
+              status_code=HTTPStatus.CREATED,
               response_model=None,
-              responses={status.HTTP_400_BAD_REQUEST: {'model': UserError},
-                         status.HTTP_401_UNAUTHORIZED: {'model': UserError},
-                         status.HTTP_404_NOT_FOUND: {'model': UserError},
-                         status.HTTP_503_SERVICE_UNAVAILABLE: {'model': UserError}})
+              responses={HTTPStatus.BAD_REQUEST: {'model': UserError},
+                         HTTPStatus.UNAUTHORIZED: {'model': UserError},
+                         HTTPStatus.NOT_FOUND: {'model': UserError},
+                         HTTPStatus.SERVICE_UNAVAILABLE: {'model': UserError}})
 async def change_password(passwords: UserChangePassword,
                           password_service: UpdatePasswordService = Depends(update_password_service)) -> Response:
     await password_service.patch(passwords)
-    return Response(status_code=status.HTTP_201_CREATED)
+    return Response(status_code=HTTPStatus.CREATED)

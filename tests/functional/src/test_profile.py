@@ -54,3 +54,4 @@ async def test_change_password(make_patch_request, login_user, admin, expected_s
     new_password_data = {'password': 'old_password', 'new_password': 'new_password'}
     response = await make_patch_request(new_password_data, 'profile/change_password/', access_token)
     assert response['status'] == status.expected_status
+

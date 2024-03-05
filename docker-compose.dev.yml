@@ -30,9 +30,8 @@ services:
   auth_postgres:
     image: postgres:15
     container_name: auth_postgres
-    # volumes:
-    #   - ./.data/postgres:/data/postgres
-    #   - ./dump.sql:/docker-entrypoint-initdb.d/dump.sql:ro
+#       - ./.data/postgres:/data/postgres
+#       - ./dump.sql:/docker-entrypoint-initdb.d/dump.sql:ro
     environment:
       POSTGRES_DB: ${DB_NAME:-auth_database}
       POSTGRES_USER: ${DB_USER:-app}
@@ -47,7 +46,7 @@ services:
     build: ./tests/functional
     container_name: auth_tests
 #    depends_on:
-#      - fastapi_nginx
+#      - auth_nginx
 #      - auth_postgres
     env_file:
       - .env

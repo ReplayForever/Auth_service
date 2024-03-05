@@ -76,20 +76,22 @@ class LoginService(AbstractService):
         user_found = await self.get_by_login(user.login)
         if not user_found:
             raise HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail="User not found")
-        await self.check_password(user)
-        refresh_token = await self._authorize.create_refresh_token(subject=str(user_found.id))
-        access_token = await self._authorize.create_access_token(subject=str(user_found.id),
-                                                                 user_claims={'role_id': user_found.role_id})
+        if await self.check_password(user):
+            refresh_token = await self._authorize.create_refresh_token(subject=str(user_found.id))
+            access_token = await self._authorize.create_access_token(subject=str(user_found.id),
+                                                                     user_claims={'role_id': user_found.role_id})
 
-        await self._authorize.set_access_cookies(access_token)
-        await self._authorize.set_refresh_cookies(refresh_token)
+            await self._authorize.set_access_cookies(access_token)
+            await self._authorize.set_refresh_cookies(refresh_token)
 
-        await self.set_by_login_history(user_id=user_found.id, user_agent=user_agent)
-        await self.set_refresh_token(user_id=user_found.id, user_agent=user_agent,
-                                     refresh_token=refresh_token)
+            await self.set_by_login_history(user_id=user_found.id, user_agent=user_agent)
+            await self.set_refresh_token(user_id=user_found.id, user_agent=user_agent,
+                                         refresh_token=refresh_token)
 
-        if not refresh_token and not access_token:
-            raise HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail="Login error")
+            if not refresh_token and not access_token:
+                raise HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail="Login error")
+        else:
+            raise HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail='Password error')
 
     async def get_by_login(self, login: str) -> User | None:
         result = await self._db.execute(

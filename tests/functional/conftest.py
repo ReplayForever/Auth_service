@@ -6,7 +6,7 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 
-from tests.functional.settings import settings
+from functional.settings import settings
 
 
 @pytest.fixture(scope='session')
@@ -164,8 +164,8 @@ async def create_user(make_post_request, async_session, admin):
             role_id = result.scalar()
 
             await session.execute(
-                text('UPDATE users SET role_id = :role_id WHERE id = :user_id'),
-                {'role_id': role_id, 'user_id': response['body']['id']}
+                text("UPDATE users SET role_id = :role_id WHERE usernname = : 'testname'"),
+                {'role_id': role_id}
             )
 
     yield user_data

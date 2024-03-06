@@ -24,8 +24,8 @@ async def test_user_login(aiohttp_client, create_user, admin, login, password, e
 
 
 @pytest.mark.parametrize('admin, login, password, expected_status', [
-    (True, 'testloginTrue', 'testpassword1!S', status.HTTP_201_CREATED),
-    (False, 'testloginFalse', 'testpassword1!S', status.HTTP_201_CREATED),
+    (True, 'testloginTrue', 'testpassword1!S', status.HTTP_200_OK),
+    (False, 'testloginFalse', 'testpassword1!S', status.HTTP_200_OK),
 ])
 @pytest.mark.asyncio
 async def test_get_user_profile(aiohttp_client, create_user, login_user, admin, login, password, expected_status):
@@ -47,7 +47,7 @@ async def test_get_user_profile(aiohttp_client, create_user, login_user, admin, 
         'birth_day': '2024-02-29',
         'picture': 'string'}
     body.pop('role_id')
-    assert response_status == status.HTTP_200_OK
+    assert response_status == expected_status
     assert user_info == body
 
 
@@ -84,13 +84,13 @@ async def test_patch_user_profile(aiohttp_client, create_user, login_user, admin
     }
 
     body.pop('role_id')
-    assert response_status == status.HTTP_201_CREATED
+    assert response_status == expected_status
     assert user_info == body
 
 
 @pytest.mark.parametrize('admin, login, password, expected_status', [
-    (True, 'testloginTrue', 'testpassword1!S', status.HTTP_201_CREATED),
-    (False, 'testloginFalse', 'testpassword1!S', status.HTTP_201_CREATED),
+    (True, 'testloginTrue', 'testpassword1!S', status.HTTP_200_OK),
+    (False, 'testloginFalse', 'testpassword1!S', status.HTTP_200_OK),
 ])
 @pytest.mark.asyncio
 async def test_user_history(aiohttp_client, create_user, login_user, admin, login, password, expected_status):
@@ -104,7 +104,7 @@ async def test_user_history(aiohttp_client, create_user, login_user, admin, logi
         if 'Content-Type' in response.headers and 'application/json' in response.headers['Content-Type']:
             body = await response.json()
 
-    assert response_status == status.HTTP_200_OK
+    assert response_status == expected_status
     assert 'page' in body
     assert 'limit' in body
     assert 'results' in body

@@ -16,14 +16,14 @@ def event_loop():
     loop.close()
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope='function')
 async def aiohttp_client():
     client = aiohttp.ClientSession()
     yield client
     await client.close()
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope='function')
 def make_get_request(aiohttp_client):
     async def inner(params: dict, method: str, access_token: str = None):
         url = f'{settings.fastapi.url()}/{method}'
@@ -43,7 +43,7 @@ def make_get_request(aiohttp_client):
     return inner
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope='function')
 def make_post_request(aiohttp_client):
     async def inner(json: dict, method: str, access_token: str = None):
         url = f'{settings.fastapi.url()}/{method}'
@@ -63,7 +63,7 @@ def make_post_request(aiohttp_client):
     return inner
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope='function')
 def make_patch_request(aiohttp_client):
     async def inner(json: dict, method: str, access_token: str = None):
         url = f'{settings.fastapi.url()}/{method}'
@@ -83,7 +83,7 @@ def make_patch_request(aiohttp_client):
     return inner
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope='function')
 def make_delete_request(aiohttp_client):
     async def inner(json: dict, method: str, access_token: str = None):
         url = f'{settings.fastapi.url()}/{method}'
@@ -132,7 +132,7 @@ async def create_role(async_session):
                 await session.execute(text("DELETE FROM roles WHERE id = :role_id"), {"role_id": role_id})
 
 
-@pytest.fixture
+@pytest.fixture(scope='function')
 async def create_user(make_post_request, async_session, admin):
     user_data = {
         'username': 'testname',
@@ -145,7 +145,7 @@ async def create_user(make_post_request, async_session, admin):
         'picture': 'string',
     }
 
-    response = await make_post_request(user_data, 'signup/')
+    await make_post_request(user_data, 'signup/')
 
     async with async_session() as session:
         async with session.begin():
@@ -164,8 +164,8 @@ async def create_user(make_post_request, async_session, admin):
             role_id = result.scalar()
 
             await session.execute(
-                text("UPDATE users SET role_id = :role_id WHERE usernname = : 'testname'"),
-                {'role_id': role_id}
+                text("UPDATE users SET role_id = :role_id WHERE username = :user_data"),
+                {'role_id': role_id, 'user_data': user_data['username']}
             )
 
     yield user_data
@@ -174,18 +174,24 @@ async def create_user(make_post_request, async_session, admin):
         async with session.begin():
             await session.execute(
                 text('''
-                DELETE FROM users WHERE login = :login
+                DELETE FROM login_histories WHERE user_id IN (SELECT id FROM users WHERE login = 'testlogin');
                 '''),
-                {'login': 'testlogin'}
             )
-
             await session.execute(
                 text('''
-                DELETE FROM roles WHERE id = :role_id
+                DELETE FROM tokens WHERE user_id IN (SELECT id FROM users WHERE login = 'testlogin');
                 '''),
-                {'role_id': role_id}
             )
-
+            await session.execute(
+                text('''
+                DELETE FROM users WHERE login = 'testlogin';
+                '''),
+            )
+            await session.execute(
+                text('''
+                DELETE FROM roles WHERE name = 'Test Role';
+                '''),
+            )
         await session.commit()
 
 

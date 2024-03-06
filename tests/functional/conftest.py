@@ -9,7 +9,7 @@ from sqlalchemy.orm import sessionmaker
 from functional.settings import settings
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope='function')
 def event_loop():
     loop = asyncio.new_event_loop()
     yield loop
@@ -29,7 +29,7 @@ def make_get_request(aiohttp_client):
         url = f'{settings.fastapi.url()}/{method}'
         cookies = {}
         if access_token:
-            cookies['access_token'] = access_token
+            cookies['access_token_cookie'] = access_token
         async with aiohttp_client.get(url, params=params, cookies=cookies) as response:
             body = None
             status = response.status
@@ -47,10 +47,10 @@ def make_get_request(aiohttp_client):
 def make_post_request(aiohttp_client):
     async def inner(json: dict, method: str, access_token: str = None):
         url = f'{settings.fastapi.url()}/{method}'
-        headers = {}
+        cookies = {}
         if access_token:
-            headers['Authorization'] = f'Bearer {access_token}'
-        async with aiohttp_client.post(url, json=json, headers=headers) as response:
+            cookies = {'access_token_cookie': access_token}
+        async with aiohttp_client.post(url, json=json, cookies=cookies) as response:
             body = None
             status = response.status
             if 'Content-Type' in response.headers and 'application/json' in response.headers['Content-Type']:
@@ -67,10 +67,10 @@ def make_post_request(aiohttp_client):
 def make_patch_request(aiohttp_client):
     async def inner(json: dict, method: str, access_token: str = None):
         url = f'{settings.fastapi.url()}/{method}'
-        headers = {}
+        cookies = {}
         if access_token:
-            headers['Authorization'] = f'Bearer {access_token}'
-        async with aiohttp_client.patch(url, json=json, headers=headers) as response:
+            cookies['access_token_cookie'] = access_token
+        async with aiohttp_client.patch(url, json=json, cookies=cookies) as response:
             body = None
             status = response.status
             if 'Content-Type' in response.headers and 'application/json' in response.headers['Content-Type']:
@@ -87,10 +87,10 @@ def make_patch_request(aiohttp_client):
 def make_delete_request(aiohttp_client):
     async def inner(json: dict, method: str, access_token: str = None):
         url = f'{settings.fastapi.url()}/{method}'
-        headers = {}
+        cookies = {}
         if access_token:
-            headers['Authorization'] = f'Bearer {access_token}'
-        async with aiohttp_client.delete(url, json=json, headers=headers) as response:
+            cookies['access_token_cookie'] = access_token
+        async with aiohttp_client.delete(url, json=json, cookies=cookies) as response:
             body = None
             status = response.status
             if 'Content-Type' in response.headers and 'application/json' in response.headers['Content-Type']:
@@ -110,35 +110,41 @@ async def redis_client():
     client.close()
 
 
-@pytest.fixture
+@pytest.fixture(scope='function')
 async def create_role(async_session):
     async with async_session() as session:
         async with session.begin():
-            result = await session.execute(text("INSERT INTO roles (name, description, is_subscriber, is_superuser, is_manager, is_admin) "
-                                                "VALUES (:name, :description, :is_subscriber, :is_superuser, :is_manager, :is_admin) "
-                                                "RETURNING id"),
-                                           {"name": "Test Role",
-                                            "description": "Test Role Description",
-                                            "is_subscriber": False,
-                                            "is_superuser": False,
-                                            "is_manager": False,
-                                            "is_admin": True})
+            result = await session.execute(
+                text("INSERT INTO roles (name, description, is_subscriber, is_superuser, is_manager, is_admin) "
+                     "VALUES (:name, :description, :is_subscriber, :is_superuser, :is_manager, :is_admin) "
+                     "RETURNING id"),
+                {"name": "Test Role for test",
+                 "description": "Test Role Description",
+                 "is_subscriber": False,
+                 "is_superuser": False,
+                 "is_manager": False,
+                 "is_admin": True})
+            await session.commit()
             role_id = result.scalar()
-            yield role_id
 
-            role_exists = await session.execute(text("SELECT id FROM roles WHERE id = :role_id"), {"role_id": role_id})
+    yield role_id
+
+    async with async_session() as session:
+        async with session.begin():
+            role_exists = await session.execute(text("SELECT id FROM roles WHERE id = :id"), {"id": role_id})
             role = role_exists.scalar()
             if role:
                 await session.execute(text("DELETE FROM roles WHERE id = :role_id"), {"role_id": role_id})
+                await session.commit()
 
 
 @pytest.fixture(scope='function')
 async def create_user(make_post_request, async_session, admin):
     user_data = {
-        'username': 'testname',
-        'login': 'testlogin',
+        'username': 'testname%s' % str(admin),
+        'login': 'testlogin%s' % str(admin),
         'password': 'testpassword1!S',
-        'email': 'test@example.ru',
+        'email': 'test@example.ru%s' % str(admin),
         'first_name': 'string',
         'last_name': 'string',
         'birth_day': '2024-02-29',
@@ -149,11 +155,15 @@ async def create_user(make_post_request, async_session, admin):
 
     async with async_session() as session:
         async with session.begin():
+            if admin:
+                name = 'Test Role Admin'
+            else:
+                name = 'Test Role Common'
             result = await session.execute(
                 text('INSERT INTO roles (name, description, is_subscriber, is_superuser, is_manager, is_admin) '
                      'VALUES (:name, :description, :is_subscriber, :is_superuser, :is_manager, :is_admin) '
                      'RETURNING id'),
-                {'name': 'Test Role',
+                {'name': name,
                  'description': 'Test Role Description',
                  'is_subscriber': admin,
                  'is_superuser': admin,
@@ -167,47 +177,56 @@ async def create_user(make_post_request, async_session, admin):
                 text("UPDATE users SET role_id = :role_id WHERE username = :user_data"),
                 {'role_id': role_id, 'user_data': user_data['username']}
             )
+            user_id = await session.execute(text("SELECT id FROM users WHERE login = :login"),
+                                            {"login": user_data['login']})
+            user_id = str(user_id.scalar())
 
-    yield user_data
+    yield user_id
 
     async with async_session() as session:
         async with session.begin():
             await session.execute(
                 text('''
-                DELETE FROM login_histories WHERE user_id IN (SELECT id FROM users WHERE login = 'testlogin');
+                DELETE FROM login_histories WHERE user_id IN (SELECT id FROM users WHERE login = :login);
                 '''),
+                {'login': 'testlogin%s' % str(admin)}
             )
             await session.execute(
                 text('''
-                DELETE FROM tokens WHERE user_id IN (SELECT id FROM users WHERE login = 'testlogin');
+                DELETE FROM tokens WHERE user_id IN (SELECT id FROM users WHERE login = :login);
                 '''),
+                {'login': 'testlogin%s' % str(admin)}
             )
             await session.execute(
                 text('''
-                DELETE FROM users WHERE login = 'testlogin';
+                DELETE FROM users WHERE login = :login;
                 '''),
+                {'login': 'testlogin%s' % str(admin)}
             )
             await session.execute(
                 text('''
-                DELETE FROM roles WHERE name = 'Test Role';
+                DELETE FROM roles WHERE name = :name;
                 '''),
+                {'name': name}
             )
         await session.commit()
 
 
-@pytest.fixture
-async def login_user(make_post_request, create_user, admin):
-    user_data = {
-        'login': await create_user(admin=admin)['login'],
-        'password': await create_user(admin=admin)['password']
-    }
+@pytest.fixture(scope='function')
+def login_user(aiohttp_client):
+    async def inner(login: str, password: str):
+        url = f'{settings.fastapi.url()}/login/'
+        user_data = {
+            'login': login,
+            'password': password,
+        }
+        async with aiohttp_client.post(url, json=user_data) as response:
+            return response.cookies
 
-    response = await make_post_request(user_data, 'login/')
-
-    return response
+    return inner
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope='function')
 async def async_session():
     engine = create_async_engine(settings.postgres.url(), echo=True, future=True)
     SessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False, future=True)

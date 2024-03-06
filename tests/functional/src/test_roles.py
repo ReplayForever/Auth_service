@@ -1,16 +1,20 @@
 import pytest
-from http import HTTPStatus
+from sqlalchemy import text
+
+from starlette import status
+
 
 pytestmark = pytest.mark.asyncio
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize('admin, expected_status', [
-    (True, HTTPStatus.OK),
-    (False, HTTPStatus.FORBIDDEN),
+@pytest.mark.parametrize('admin, login, password, expected_status', [
+    (True, 'testloginTrue', 'testpassword1!S', status.HTTP_200_OK),
+    (False, 'testloginFalse', 'testpassword1!S', status.HTTP_403_FORBIDDEN),
 ])
-async def test_get_roles(make_get_request, login_user, admin, expected_status):
-    access_token = login_user(admin)['access_token']
+async def test_get_roles(create_user, login_user, make_get_request, admin, login, password, expected_status):
+    tokens = await login_user(login, password)
+    access_token = tokens['access_token_cookie'].value
     response = await make_get_request({}, 'roles/', access_token)
     assert response['status'] == expected_status
     if admin:
@@ -18,11 +22,12 @@ async def test_get_roles(make_get_request, login_user, admin, expected_status):
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize('admin, expected_status', [
-    (True, HTTPStatus.OK),
-    (False, HTTPStatus.FORBIDDEN),
+@pytest.mark.parametrize('admin, login, password, expected_status', [
+    (True, 'testloginTrue', 'testpassword1!S', status.HTTP_200_OK),
+    (False, 'testloginFalse', 'testpassword1!S', status.HTTP_403_FORBIDDEN),
 ])
-async def test_create_role(make_post_request, login_user, admin, expected_status):
+async def test_create_role(create_user, async_session, make_post_request, login_user,
+                           admin, login, password, expected_status):
     role_data = {
         'name': 'Test Role',
         'description': 'Test Description',
@@ -31,8 +36,20 @@ async def test_create_role(make_post_request, login_user, admin, expected_status
         'is_manager': False,
         'is_admin': True,
     }
-    access_token = login_user(admin)['access_token']
+    tokens = await login_user(login, password)
+    access_token = tokens['access_token_cookie'].value
     response = await make_post_request(role_data, 'roles/', access_token)
+
+    async with async_session() as session:
+        async with session.begin():
+            await session.execute(
+                text('''
+                DELETE FROM roles WHERE name = :name;
+                '''),
+                {'name': role_data['name']}
+            )
+        await session.commit()
+
     assert response['status'] == expected_status
     if admin:
         assert 'id' in response['body']
@@ -40,23 +57,26 @@ async def test_create_role(make_post_request, login_user, admin, expected_status
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize('admin, expected_status', [
-    (True, HTTPStatus.OK),
-    (False, HTTPStatus.FORBIDDEN),
+@pytest.mark.parametrize('admin, login, password, expected_status', [
+    (True, 'testloginTrue', 'testpassword1!S', status.HTTP_200_OK),
+    (False, 'testloginFalse', 'testpassword1!S', status.HTTP_403_FORBIDDEN),
 ])
-async def test_delete_role(make_delete_request, create_role, login_user, admin, expected_status):
-    access_token = login_user(admin)['access_token']
+async def test_delete_role(create_user, make_delete_request, create_role, login_user,
+                           admin, login, password, expected_status):
+    tokens = await login_user(login, password)
+    access_token = tokens['access_token_cookie'].value
     role_id = create_role
     response = await make_delete_request({'id': role_id}, 'roles/', access_token)
     assert response['status'] == expected_status
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize('admin, expected_status', [
-    (True, HTTPStatus.OK),
-    (False, HTTPStatus.FORBIDDEN),
+@pytest.mark.parametrize('admin, login, password, expected_status', [
+    (True, 'testloginTrue', 'testpassword1!S', status.HTTP_200_OK),
+    (False, 'testloginFalse', 'testpassword1!S', status.HTTP_403_FORBIDDEN),
 ])
-async def test_update_role(make_patch_request, create_role, login_user, admin, expected_status):
+async def test_update_role(create_user, make_patch_request, create_role, login_user,
+                           admin, login, password, expected_status):
     role_id = create_role
     role_data = {
         'role_id': role_id,
@@ -66,7 +86,8 @@ async def test_update_role(make_patch_request, create_role, login_user, admin, e
         'is_manager': True,
         'is_admin': True,
     }
-    access_token = login_user(admin)['access_token']
+    tokens = await login_user(login, password)
+    access_token = tokens['access_token_cookie'].value
     response = await make_patch_request(role_data, 'roles/', access_token)
     assert response['status'] == expected_status
     if admin:
@@ -75,28 +96,38 @@ async def test_update_role(make_patch_request, create_role, login_user, admin, e
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize('admin, expected_status', [
-    (True, HTTPStatus.OK),
-    (False, HTTPStatus.FORBIDDEN),
+@pytest.mark.parametrize('admin, login, password, expected_status', [
+    (True, 'testloginTrue', 'testpassword1!S', status.HTTP_200_OK),
+    (False, 'testloginFalse', 'testpassword1!S', status.HTTP_200_OK),
 ])
-async def test_get_user_role(make_get_request, login_user, create_user, admin, expected_status):
-    access_token = login_user(admin)['access_token']
-    user_id = create_user['id']
+async def test_get_user_role(async_session, make_get_request, login_user, create_user,
+                             admin, login, password, expected_status):
+    tokens = await login_user(login, password)
+    access_token = tokens['access_token_cookie'].value
+    async with async_session() as session:
+        async with session.begin():
+            user_id = await session.execute(text("SELECT id FROM users WHERE login = :login"), {"login": login})
+            user_id = str(user_id.scalar())
+
     response = await make_get_request({'user_id': user_id}, f'user_role/{user_id}/', access_token)
     assert response['status'] == expected_status
     if admin:
-        assert 'role_id' in response['body']
+        assert 'id' in response['body']
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize('admin, expected_status', [
-    (True, HTTPStatus.CREATED),
-    (False, HTTPStatus.FORBIDDEN),
+@pytest.mark.parametrize('admin, login, password, expected_status', [
+    (True, 'testloginTrue', 'testpassword1!S', status.HTTP_201_CREATED),
+    (False, 'testloginFalse', 'testpassword1!S', status.HTTP_403_FORBIDDEN),
 ])
-async def test_assign_role(make_post_request, login_user, create_user, admin, expected_status, create_role):
-    access_token = login_user(admin)['access_token']
-    user_id = create_user['id']
+async def test_assign_role(create_role, create_user, make_post_request, login_user,
+                           admin, login, password, expected_status):
+    tokens = await login_user(login, password)
+    access_token = tokens['access_token_cookie'].value
+
+    user_id = create_user
     role_id = create_role
+
     role_assign_data = {
         'user_id': user_id,
         'role_id': role_id,
@@ -104,5 +135,6 @@ async def test_assign_role(make_post_request, login_user, create_user, admin, ex
     response = await make_post_request(role_assign_data, 'user_role/', access_token)
     assert response['status'] == expected_status
     if admin:
-        assert 'role_id' in response['body']
-        assert response['body']['role_id'] == role_id
+        assert 'role' in response['body']
+        assert 'user' in response['body']
+        assert response['body']['role']['id'] == role_id

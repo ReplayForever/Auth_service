@@ -42,7 +42,7 @@ class RoleCreateService(CreateAbstractService, RolesCommon, AccessCheckCommon):
 
     async def create(self, role: CreateRole, request: Request) -> RoleToRepresentation:
         await self.check_access()
-        await self.check_auth(request)
+        await self.check_auth()
 
         new_role = Role(**role.dict())
         self._db.add(new_role)

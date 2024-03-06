@@ -197,10 +197,9 @@ async def create_user(make_post_request, async_session, admin):
 
 @pytest.fixture
 async def login_user(make_post_request, create_user, admin):
-    created_user_data = create_user(admin=admin)
     user_data = {
-        'login': created_user_data['login'],
-        'password': created_user_data['password']
+        'login': await create_user(admin=admin)['login'],
+        'password': await create_user(admin=admin)['password']
     }
 
     response = await make_post_request(user_data, 'login/')

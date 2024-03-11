@@ -56,17 +56,6 @@ def upgrade() -> None:
     sa.UniqueConstraint('login'),
     sa.UniqueConstraint('username')
     )
-    op.create_table('login_histories',
-    sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
-    sa.Column('user_agent', sa.String(length=255), nullable=True),
-    sa.Column('auth_date', sa.DateTime(), nullable=True),
-    sa.Column('created_at', sa.DateTime(), nullable=True),
-    sa.Column('modified_at', sa.DateTime(), nullable=True),
-    sa.Column('user_id', sa.UUID(), nullable=True),
-    sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
-    sa.PrimaryKeyConstraint('id'),
-    sa.UniqueConstraint('id')
-    )
     op.create_table('tokens',
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.Column('refresh_token', sa.String(length=500), nullable=True),
@@ -79,6 +68,34 @@ def upgrade() -> None:
     sa.UniqueConstraint('id'),
     sa.UniqueConstraint('refresh_token')
     )
+    op.create_table('login_histories',
+    sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
+    sa.Column('user_agent', sa.String(length=255), nullable=True),
+    sa.Column('user_device_type', sa.String(length=255), nullable=True),
+    sa.Column('auth_date', sa.DateTime(), nullable=True),
+    sa.Column('created_at', sa.DateTime(), nullable=True),
+    sa.Column('modified_at', sa.DateTime(), nullable=True),
+    sa.Column('user_id', sa.UUID(), nullable=True),
+    sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
+    sa.PrimaryKeyConstraint('id', 'user_device_type'),
+    sa.UniqueConstraint('id', 'user_device_type'),
+    postgresql_partition_by='LIST (user_device_type)'
+    )
+    op.execute(
+        """
+        CREATE TABLE IF NOT EXISTS "login_histories_smart" PARTITION OF "login_histories" FOR VALUES IN ('smart_tv')
+        """
+    )
+    op.execute(
+        """
+        CREATE TABLE IF NOT EXISTS "login_histories_mobile" PARTITION OF "login_histories" FOR VALUES IN ('mobile')
+        """
+    )
+    op.execute(
+        """
+        CREATE TABLE IF NOT EXISTS "login_histories_desktop" PARTITION OF "login_histories" FOR VALUES IN ('desktop')
+        """
+    )
     # ### end Alembic commands ###
 
 
@@ -88,4 +105,7 @@ def downgrade() -> None:
     op.drop_table('login_histories')
     op.drop_table('users')
     op.drop_table('roles')
+    op.drop_table('login_histories_smart')
+    op.drop_table('login_histories_mobile')
+    op.drop_table('login_histories_desktop')
     # ### end Alembic commands ###

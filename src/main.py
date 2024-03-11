@@ -3,15 +3,17 @@ from contextlib import asynccontextmanager
 import uvicorn
 from async_fastapi_jwt_auth import AuthJWT
 from async_fastapi_jwt_auth.exceptions import AuthJWTException
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, status
 from fastapi.responses import ORJSONResponse
+from opentelemetry import trace
+from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 from redis.asyncio import Redis
-from fastapi import Request
 from starlette.responses import JSONResponse
 
 from api.v1 import auth, profile, user_role, roles
 from core.config import settings, JWTSettings
 from core.logger import LOGGING
+from core.tracing import configure_tracer
 from db import redis
 
 
@@ -46,6 +48,28 @@ app.include_router(user_role.router, prefix='/api/v1', tags=['user_role'])
 @AuthJWT.load_config
 def get_config():
     return JWTSettings()
+
+
+@app.middleware('http')
+async def add_request_id_tag(request: Request, call_next):
+    tracer = trace.get_tracer(__name__)
+    with tracer.start_as_current_span("request_id_middleware") as span:
+        span.set_attribute('http.request_id', request.headers.get('X-Request-Id'))
+        response = await call_next(request)
+    return response
+
+
+@app.middleware('http')
+async def before_request(request: Request, call_next):
+    response = await call_next(request)
+    request_id = request.headers.get('X-Request-Id')
+    if not request_id:
+        return ORJSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content={'detail': 'X-Request-Id is required'})
+    return response
+
+
+configure_tracer()
+FastAPIInstrumentor.instrument_app(app)
 
 
 @app.exception_handler(AuthJWTException)

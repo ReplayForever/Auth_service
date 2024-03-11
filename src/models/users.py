@@ -19,6 +19,19 @@ class UserCreate(BaseModel):
     picture: str | None
 
 
+class UserYandexCreate(BaseModel):
+    username: str
+    login: str
+    password: str
+    first_name: str | None
+    last_name: str | None
+    email: str
+    birth_day: date | None
+    picture: str | None
+    yandex_login: str
+    is_verified_email: bool
+
+
 class UserInDB(BaseModel):
     id: UUID
 

@@ -10,7 +10,7 @@ from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 from redis.asyncio import Redis
 from starlette.responses import JSONResponse
 
-from api.v1 import auth, profile, user_role, roles
+from api.v1 import auth, profile, user_role, roles, oauth
 from core.config import settings, JWTSettings
 from core.logger import LOGGING
 from core.tracing import configure_tracer
@@ -43,6 +43,7 @@ app.include_router(auth.router, prefix='/api/v1', tags=['auth'])
 app.include_router(profile.router, prefix='/api/v1', tags=['profile'])
 app.include_router(roles.router, prefix='/api/v1', tags=['roles'])
 app.include_router(user_role.router, prefix='/api/v1', tags=['user_role'])
+app.include_router(oauth.router, prefix='/api/v1', tags=['oauth'])
 
 
 @AuthJWT.load_config

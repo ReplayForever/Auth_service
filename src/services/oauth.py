@@ -96,10 +96,10 @@ class YandexAuthServiceCallback(AbstractService):
         )
         user = User(**jsonable_encoder(user_data))
         result = await self._db.execute(select(Role).where(
-                Role.is_admin == False,
-                Role.is_subscriber == False,
-                Role.is_superuser == False,
-                Role.is_manager == False
+            Role.is_admin == False,
+            Role.is_subscriber == False,
+            Role.is_superuser == False,
+            Role.is_manager == False
         ))
         role = result.fetchone()
 

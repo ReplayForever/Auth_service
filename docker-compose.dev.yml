@@ -8,7 +8,7 @@ services:
       - redis
       - auth_postgres
     ports:
-      - "8002"
+      - "8002:8002"
     env_file:
       - .env
     networks:
@@ -17,9 +17,9 @@ services:
   auth_nginx:
     image: nginx:latest
     container_name: auth_nginx
-    volumes:
-      - ./src/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./src/nginx_config:/etc/nginx/conf.d:ro
+#    volumes:
+#      - ./src/nginx.conf:/etc/nginx/nginx.conf:ro
+#      - ./src/nginx_config:/etc/nginx/conf.d:ro
     depends_on:
       - auth_service
     ports:
@@ -30,6 +30,7 @@ services:
   auth_postgres:
     image: postgres:15
     container_name: auth_postgres
+#    volumes:
 #       - ./.data/postgres:/data/postgres
 #       - ./dump.sql:/docker-entrypoint-initdb.d/dump.sql:ro
     environment:
@@ -45,9 +46,9 @@ services:
   auth_tests:
     build: ./tests/functional
     container_name: auth_tests
-#    depends_on:
-#      - auth_nginx
-#      - auth_postgres
+    depends_on:
+      - auth_nginx
+      - auth_postgres
     env_file:
       - .env
     networks:

@@ -25,9 +25,9 @@ async def yandex_login(yandex_user: YandexAuthServiceLogin = Depends(get_yandex_
 async def yandex_callback(code: str,
                           user_agent: str = Header(""),
                           user_data: YandexAuthServiceCallback = Depends(get_yandex_callback_service)):
-    response = await user_data.get_data(code, user_agent)
-    if response:
-        return Response(status_code=HTTPStatus.OK)
-    else:
+    result = await user_data.get_data(code, user_agent)
+    if not result:
         raise HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail='Login error')
+    return result
+
 

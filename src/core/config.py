@@ -35,10 +35,16 @@ class PostgreSQLSettings(BaseSettings):
         return dsn
 
 
+class YandexClientSettings(BaseSettings):
+    client_id: str = Field(validation_alias='CLIENT_ID')
+    client_secret: str = Field(validation_alias='CLIENT_SECRET')
+
+
 class Settings(BaseSettings):
     log_level: int | str = Field(validation_alias='LOG_LEVEL', default=logging.DEBUG)
     redis: RedisSettings = RedisSettings()
     db: PostgreSQLSettings = PostgreSQLSettings()
+    yandex: YandexClientSettings = YandexClientSettings()
 
 
 settings = Settings()

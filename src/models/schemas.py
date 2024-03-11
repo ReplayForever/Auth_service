@@ -24,6 +24,7 @@ class User(Base):
                 nullable=False)
     username = Column(String(50), unique=True, nullable=False)
     login = Column(String(255), unique=True, nullable=False)
+    yandex_login = Column(String(255), unique=True, nullable=True)
     password = Column(String(255), nullable=False)
     first_name = Column(String(50), nullable=True)
     last_name = Column(String(50), nullable=True)

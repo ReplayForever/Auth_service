@@ -3,6 +3,7 @@ from http import HTTPStatus
 from fastapi import APIRouter, Depends, HTTPException, Header, Request
 from starlette.responses import Response
 
+from limiter import rate_limit
 from services.auth import (get_sign_up_service, SignUpService, LoginService, get_login_service, LogoutService,
                            get_logout_service)
 from models.users import UserLogin, UserCreate, UserMessageOut
@@ -15,7 +16,10 @@ router = APIRouter()
 @router.post('/signup/',
              description="Регистрация пользователя",
              status_code=HTTPStatus.CREATED)
-async def signup(user_create: UserCreate, user_register: SignUpService = Depends(get_sign_up_service)) -> Response:
+@rate_limit()
+async def signup(request: Request,
+                 user_create: UserCreate,
+                 user_register: SignUpService = Depends(get_sign_up_service)) -> Response:
     user = await user_register.get_data(user_create)
     if user:
         return Response(status_code=HTTPStatus.CREATED)
@@ -27,7 +31,9 @@ async def signup(user_create: UserCreate, user_register: SignUpService = Depends
              description="Аутентификация пользователя",
              status_code=HTTPStatus.CREATED,
              response_model=UserMessageOut)
-async def login(user_auth: UserLogin,
+@rate_limit()
+async def login(request: Request,
+                user_auth: UserLogin,
                 user_login: LoginService = Depends(get_login_service),
                 user_agent: str = Header("")) -> UserMessageOut:
     await user_login.get_data(user_auth, user_agent)
@@ -49,6 +55,7 @@ async def logout(request: Request,
              description="Обновление токенов",
              status_code=HTTPStatus.CREATED,
              response_model=UserMessageOut)
+@rate_limit()
 async def token_refresh(request: Request,
                         user_token_refresh: RefreshService = Depends(get_refresh_service)) -> UserMessageOut:
     await user_token_refresh.post(request)

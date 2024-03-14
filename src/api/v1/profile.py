@@ -1,9 +1,10 @@
 from typing import Annotated
 from http import HTTPStatus
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from starlette.responses import Response
 
+from limiter import rate_limit
 from models.users import ChangeUserProfile, UserProfileResult, UserProfileHistory, UserChangePassword, UserError, \
     Paginator
 from services.profile import ProfileInfoService, get_profile_info_service, ProfileHistoryService, \
@@ -19,7 +20,9 @@ router = APIRouter()
             responses={HTTPStatus.UNAUTHORIZED: {'model': UserError},
                        HTTPStatus.NOT_FOUND: {'model': UserError},
                        HTTPStatus.SERVICE_UNAVAILABLE: {'model': UserError}})
-async def user_profile(user_info: ProfileInfoService = Depends(get_profile_info_service)) -> UserProfileResult:
+@rate_limit()
+async def user_profile(request: Request,
+                       user_info: ProfileInfoService = Depends(get_profile_info_service)) -> UserProfileResult:
     answer = await user_info.get_data()
     if answer:
         return answer
@@ -35,7 +38,9 @@ async def user_profile(user_info: ProfileInfoService = Depends(get_profile_info_
               responses={HTTPStatus.UNAUTHORIZED: {'model': UserError},
                          HTTPStatus.NOT_FOUND: {'model': UserError},
                          HTTPStatus.SERVICE_UNAVAILABLE: {'model': UserError}})
+@rate_limit()
 async def change_profile(
+        request: Request,
         user_info: ChangeUserProfile,
         patch_user: ProfileUpdateInfoService = Depends(patch_profile_info_service)
 ) -> UserProfileResult:
@@ -53,7 +58,9 @@ async def change_profile(
                        HTTPStatus.UNAUTHORIZED: {'model': UserError},
                        HTTPStatus.NOT_FOUND: {'model': UserError},
                        HTTPStatus.SERVICE_UNAVAILABLE: {'model': UserError}})
-async def profile_history(page: Annotated[int, Query(ge=1,
+@rate_limit()
+async def profile_history(request: Request,
+                          page: Annotated[int, Query(ge=1,
                                           description='Pagination page number')] = 1,
                           limit: Annotated[int, Query(ge=1,
                                            le=100,
@@ -72,7 +79,9 @@ async def profile_history(page: Annotated[int, Query(ge=1,
                          HTTPStatus.UNAUTHORIZED: {'model': UserError},
                          HTTPStatus.NOT_FOUND: {'model': UserError},
                          HTTPStatus.SERVICE_UNAVAILABLE: {'model': UserError}})
-async def change_password(passwords: UserChangePassword,
+@rate_limit()
+async def change_password(request: Request,
+                          passwords: UserChangePassword,
                           password_service: UpdatePasswordService = Depends(update_password_service)) -> Response:
     await password_service.patch(passwords)
     return Response(status_code=HTTPStatus.CREATED)

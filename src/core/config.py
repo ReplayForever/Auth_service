@@ -5,7 +5,6 @@ from pathlib import Path
 from dotenv import load_dotenv
 from pydantic import Field, BaseModel
 from pydantic_settings import BaseSettings
-from async_fastapi_jwt_auth import AuthJWT
 
 from logging import config as logging_config
 
@@ -40,11 +39,17 @@ class YandexClientSettings(BaseSettings):
     client_secret: str = Field(validation_alias='CLIENT_SECRET')
 
 
+class RateLimitSettings(BaseSettings):
+    limit: int = Field(validation_alias='LIMIT', default=1000)
+    interval: int = Field(validation_alias='INTERVAL', default=60)
+
+
 class Settings(BaseSettings):
     log_level: int | str = Field(validation_alias='LOG_LEVEL', default=logging.DEBUG)
     redis: RedisSettings = RedisSettings()
     db: PostgreSQLSettings = PostgreSQLSettings()
     yandex: YandexClientSettings = YandexClientSettings()
+    rate_limit: RateLimitSettings = RateLimitSettings()
 
 
 settings = Settings()

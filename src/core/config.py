@@ -40,8 +40,8 @@ class YandexClientSettings(BaseSettings):
 
 
 class RateLimitSettings(BaseSettings):
-    limit: int = Field(validation_alias='LIMIT')
-    interval: int = Field(validation_alias='INTERVAL')
+    limit: int = Field(validation_alias='LIMIT', default=1000)
+    interval: int = Field(validation_alias='INTERVAL', default=60)
 
 
 class Settings(BaseSettings):

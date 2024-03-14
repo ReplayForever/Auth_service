@@ -27,12 +27,15 @@ services:
     networks:
       - my_network
 
-  auth_postgres:
-    image: postgres:15
+  auth_postgres:  
+    build:
+      context: .
+      dockerfile: ./src/Dockerfile_postgres
     container_name: auth_postgres
-#    volumes:
-#       - ./.data/postgres:/data/postgres
-#       - ./dump.sql:/docker-entrypoint-initdb.d/dump.sql:ro
+    volumes:
+      - ./src/initdb.sh:/docker-entrypoint-initdb.d/initdb.sh
+      # - ./.data/postgres:/data/postgres
+      # - ./dump.sql:/docker-entrypoint-initdb.d/dump.sql:ro
     environment:
       POSTGRES_DB: ${DB_NAME:-auth_database}
       POSTGRES_USER: ${DB_USER:-app}

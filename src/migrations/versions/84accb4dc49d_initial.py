@@ -71,29 +71,28 @@ def upgrade() -> None:
     op.create_table('login_histories',
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.Column('user_agent', sa.String(length=255), nullable=True),
-    sa.Column('user_device_type', sa.String(length=255), nullable=True),
     sa.Column('auth_date', sa.DateTime(), nullable=True),
     sa.Column('created_at', sa.DateTime(), nullable=True),
     sa.Column('modified_at', sa.DateTime(), nullable=True),
     sa.Column('user_id', sa.UUID(), nullable=True),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
-    sa.PrimaryKeyConstraint('id', 'user_device_type'),
-    sa.UniqueConstraint('id', 'user_device_type'),
-    postgresql_partition_by='LIST (user_device_type)'
+    sa.PrimaryKeyConstraint('id', 'auth_date'),
+    sa.UniqueConstraint('id', 'auth_date'),
+    postgresql_partition_by='RANGE (auth_date)',
     )
     op.execute(
         """
-        CREATE TABLE IF NOT EXISTS "login_histories_smart" PARTITION OF "login_histories" FOR VALUES IN ('smart_tv')
-        """
-    )
-    op.execute(
-        """
-        CREATE TABLE IF NOT EXISTS "login_histories_mobile" PARTITION OF "login_histories" FOR VALUES IN ('mobile')
+        CREATE TABLE login_histories_template (LIKE login_histories);
         """
     )
     op.execute(
         """
-        CREATE TABLE IF NOT EXISTS "login_histories_desktop" PARTITION OF "login_histories" FOR VALUES IN ('desktop')
+        ALTER TABLE login_histories_template ADD PRIMARY KEY (id);
+        """
+    )
+    op.execute(
+        """
+        SELECT partman.create_parent('login_histories', p_template_table := 'login_histories_template', p_control := 'auth_date', p_interval := '1 month');
         """
     )
     # ### end Alembic commands ###
@@ -105,7 +104,9 @@ def downgrade() -> None:
     op.drop_table('login_histories')
     op.drop_table('users')
     op.drop_table('roles')
-    op.drop_table('login_histories_smart')
-    op.drop_table('login_histories_mobile')
-    op.drop_table('login_histories_desktop')
+    op.execute(
+        """
+        SELECT partman.undo_partition('public.login_histories', 'time_based_constraint');
+        """
+    )
     # ### end Alembic commands ###

@@ -68,9 +68,9 @@ async def before_request(request: Request, call_next):
         return ORJSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content={'detail': 'X-Request-Id is required'})
     return response
 
-
-configure_tracer()
-FastAPIInstrumentor.instrument_app(app)
+if settings.tracing.enable_tracer:
+    configure_tracer()
+    FastAPIInstrumentor.instrument_app(app)
 
 
 @app.exception_handler(AuthJWTException)

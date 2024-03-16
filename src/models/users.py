@@ -28,9 +28,13 @@ class UserYandexCreate(BaseModel):
     email: str
     birth_day: date | None
     picture: str | None
-    yandex_login: str
+    social_network_login: str
     is_verified_email: bool
 
+
+class SocialNetworkCreate(BaseModel):
+    name: str
+    user_id: UUID
 
 class UserInDB(BaseModel):
     id: UUID

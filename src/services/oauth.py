@@ -12,8 +12,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.config import settings
 from db.postgres import get_session
-from models.schemas import LoginHistory, Role, Token, User
-from models.users import UserYandexCreate
+from models.schemas import LoginHistory, Role, Token, User, SocialNetwork
+from models.users import UserYandexCreate, SocialNetworkCreate
 from services.abstract import AbstractService
 from utils.helpers import generate_random_password
 
@@ -43,6 +43,8 @@ class YandexAuthServiceCallback(AbstractService):
         user_found = await self.get_user_by_yandex_email(user_info['default_email'])
         if not user_found:
             await self.create_user_for_db(user_info)
+            user = await self.get_user_by_yandex_email(user_info['default_email'])
+            await self.social_network_for_db(user.id)
         else:
             await self.user_update(user_found, user_info)
 
@@ -91,7 +93,7 @@ class YandexAuthServiceCallback(AbstractService):
             birth_day=datetime.strptime(user_info.get('birthday'), "%Y-%m-%d") if user_info.get('birthday') else None,
             password=generate_random_password(),
             picture=None,
-            yandex_login=user_info["login"],
+            social_network_login=user_info["login"],
             is_verified_email=True
         )
         user = User(**jsonable_encoder(user_data))
@@ -161,12 +163,21 @@ class YandexAuthServiceCallback(AbstractService):
         await self._db.commit()
 
     async def user_update(self, user_found, user_info: dict):
-        user_found.yandex_login = user_info['login']
+        user_found.social_network_login = user_info['login']
         user_found.first_name = user_info['first_name']
         user_found.last_name = user_info['last_name']
         user_found.is_verified_email = True
         await self.db_add_user(user_found)
 
+    async def social_network_for_db(self, user_id):
+        data = SocialNetworkCreate(
+            name='Yandex',
+            user_id=user_id
+        )
+        social_network = SocialNetwork(**jsonable_encoder(data))
+        self._db.add(social_network)
+        await self._db.commit()
+        await self._db.refresh(social_network)
 
 @lru_cache()
 def get_yandex_login_service() -> YandexAuthServiceLogin:

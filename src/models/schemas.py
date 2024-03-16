@@ -24,7 +24,7 @@ class User(Base):
                 nullable=False)
     username = Column(String(50), unique=True, nullable=False)
     login = Column(String(255), unique=True, nullable=False)
-    yandex_login = Column(String(255), unique=True, nullable=True)
+    social_network_login = Column(String(255), unique=True, nullable=True)
     password = Column(String(255), nullable=False)
     first_name = Column(String(50), nullable=True)
     last_name = Column(String(50), nullable=True)
@@ -42,6 +42,7 @@ class User(Base):
                                  cascade='all, delete',
                                  passive_deletes=True)
     is_active = Column(Boolean, default=False)
+    social_network = relationship('SocialNetwork', back_populates='user')
 
     def __init__(self, username: str, login: str, password: str, birth_day: str | None, email: str, *args, **kwargs):
         if not validate_password(password):
@@ -132,3 +133,13 @@ class LoginHistory(Base):
         self.user_id = user_id
         for key, value in kwargs.items():
             setattr(self, key, value)
+
+
+class SocialNetwork(Base):
+    __tablename__ = 'social_network'
+    id = Column(Integer, primary_key=True, unique=True, nullable=False, autoincrement=True)
+    name = Column(String(100), nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    modified_at = Column(DateTime, default=datetime.utcnow)
+    user_id = Column(ForeignKey('users.id'))
+    user = relationship('User', back_populates='social_network')
